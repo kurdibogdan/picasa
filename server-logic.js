@@ -1,5 +1,5 @@
 // 1. A helyi PHP elérése (feltételezzük, hogy a php -S localhost:80 fut)
-const LOCAL_PHP_URL = 'http://localhost/picasa/local_photos.php';
+/// const LOCAL_PHP_URL = 'http://localhost/picasa/local_photos.php';
 
 // 2. A DataChannel eseménykezelője (amikor a kliens üzenetet küld)
 function setupDataChannelHandlers() {
@@ -23,12 +23,15 @@ function setupDataChannelHandlers() {
 // 3. Fájllista lekérése a helyi PHP-től és továbbküldése P2P-n
 async function sendLocalFileList(path) {
     try {
-        let url = LOCAL_PHP_URL + '?action=list';
+        let url = "local_photos.php?action=list";
         if (path) {
             url += '&path=' + encodeURIComponent(path);
         }
         const response = await fetch(url);
+        console.log("path: " + path);
+        console.log("response: " + response);
         const files = await response.json();
+        
         
         // Elküldjük a listát a távoli kliensnek a P2P csatornán
         dataChannel.send(JSON.stringify({
@@ -44,7 +47,7 @@ async function sendLocalFileList(path) {
 // 4. Egy konkrét kép beolvasása a helyi PHP-től és küldése
 async function fetchAndSendFile(filename, path) {
     try {
-        let url = LOCAL_PHP_URL + '?file=' + encodeURIComponent(filename);
+        let url = "local_photos.php?file=" + encodeURIComponent(filename);
         if (path) {
             url += '&path=' + encodeURIComponent(path);
         }

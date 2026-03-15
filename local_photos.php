@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(); // Az OPTIONS kérésre azonnal üres választ adunk
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 $baseDir = 'SharedPhotos/';
 
@@ -110,6 +110,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
         }
         closedir($handle);
     }
+    
     echo json_encode($items);
     exit;
 }
