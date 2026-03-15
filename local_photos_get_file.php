@@ -19,13 +19,20 @@ function getFile($fullPath) {
         $fullPath = mb_convert_encoding($fullPath, 'ISO-8859-2', 'UTF-8');
     }
     
-    // Csak az adatot adjuk vissza base64-ben
+    // JSON objektumot adunk vissza
     if (file_exists($fullPath)) {
         $data = file_get_contents($fullPath);
         $type = pathinfo($fullPath, PATHINFO_EXTENSION);
-        return 'data:image/' . $type . ';base64,' . base64_encode($data);
+        $filename = basename($fullPath);
+        $filedate = date('Y-m-d H:i:s', filemtime($fullPath));
+        
+        return json_encode(array(
+            'filename' => $filename,
+            'filedate' => $filedate,
+            'data' => 'data:image/' . $type . ';base64,' . base64_encode($data)
+        ));
     }
     
-    return false;
+    return json_encode(array('error' => 'File not found or invalid path'));
 }
 

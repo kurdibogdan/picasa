@@ -1,5 +1,5 @@
 <?php
-// Thumbnail készítő függvény: 100x100 px, JPEG, 60% minőség
+// Thumbnail készítő függvény: max 100x100 px, arány megtartásával, JPEG, 60% minőség
 function createThumbnail($sourcePath, $thumbPath) {
     if (!file_exists($sourcePath) || !is_readable($sourcePath)) {
         error_log("Nem sikerült kisképet létrehozni, a fájl nem olvasható: " . $sourcePath);
@@ -32,7 +32,23 @@ function createThumbnail($sourcePath, $thumbPath) {
         return false;
     }
 
-    $thumb = imagecreatetruecolor(100, 100);
+    // Eredeti méretek lekérése
+    $origWidth = imagesx($img);
+    $origHeight = imagesy($img);
+    
+    // Arány megtartása mellett számítsuk ki az új méreteket
+    // Maximum 100x100, de legalább egyik oldal 100px
+    if ($origWidth >= $origHeight) {
+        // Szélesebb vagy négyzet: szélesség legyen 100px
+        $thumbWidth = 100;
+        $thumbHeight = (int)round((100 * $origHeight) / $origWidth);
+    } else {
+        // Magasabb: magasság legyen 100px
+        $thumbHeight = 100;
+        $thumbWidth = (int)round((100 * $origWidth) / $origHeight);
+    }
+
+    $thumb = imagecreatetruecolor($thumbWidth, $thumbHeight);
     if (!$thumb) {
         imagedestroy($img);
         return false;
@@ -43,7 +59,7 @@ function createThumbnail($sourcePath, $thumbPath) {
         imagealphablending($thumb, false);
         imagesavealpha($thumb, true);
     }
-    imagecopyresampled($thumb, $img, 0, 0, 0, 0, 100, 100, imagesx($img), imagesy($img));
+    imagecopyresampled($thumb, $img, 0, 0, 0, 0, $thumbWidth, $thumbHeight, $origWidth, $origHeight);
     $result = @imagejpeg($thumb, $thumbPath, 60);
     imagedestroy($img);
     imagedestroy($thumb);

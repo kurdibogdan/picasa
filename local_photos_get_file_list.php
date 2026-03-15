@@ -10,8 +10,7 @@ function getFileList($folderPath) {
     $parts = explode('/', $folderPath);
     foreach ($parts as $part) {
         if ($part === '..') {
-            echo json_encode(array('error' => 'Invalid path'));
-            exit;
+            return json_encode(array('error' => 'Invalid path'));
         }
     }
 
@@ -63,13 +62,34 @@ function getFileList($folderPath) {
         closedir($handle);
     }
     
+    // Rendezés: mappák előre, majd ABC-sorrend
+    $folders = array();
+    $files = array();
+    foreach ($items as $item) {
+        if ($item['type'] === 'folder') {
+            $folders[] = $item;
+        } else {
+            $files[] = $item;
+        }
+    }
+    
+    // Rendezés név szerint
+    usort($folders, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    usort($files, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    
+    // Egyesítés: mappák előre, aztán fájlok
+    $items = array_merge($folders, $files);
+    
     // JSON kódolás:
     $json = json_encode($items);
     if ($json === false) {
         error_log("JSON encode failed: " . json_last_error_msg());
-        echo json_encode(array('error' => 'JSON encoding failed: ' . json_last_error_msg()));
+        return json_encode(array('error' => 'JSON encoding failed: ' . json_last_error_msg()));
     } else {
-        echo $json;
+        return $json;
     }
-    exit;
 }

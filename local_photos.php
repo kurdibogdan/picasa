@@ -29,7 +29,7 @@ $fullPath = $baseDir.$path;
 
 switch($action){
     case "list": // Lista kérése JSON formában
-        getFileList($fullPath);
+        echo getFileList($fullPath);
         break;
     case "file": // Egy konkrét kép beolvasása Base64-be a küldéshez
         echo getFile($fullPath);
