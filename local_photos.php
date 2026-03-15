@@ -105,12 +105,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
             $entryUtf8 = $entry;
             if (!mb_check_encoding($entry, 'UTF-8')) {
                 // Windows fájlrendszerről érkező fájlnév konvertálása UTF-8-ra
-                // Magyar Windows rendszereken gyakran Windows-1250 vagy CP1252 encoding van
-                $detected = mb_detect_encoding($entry, ['UTF-8', 'Windows-1250', 'Windows-1252', 'ISO-8859-2', 'ISO-8859-1'], true);
-                if ($detected === false) {
-                    $detected = 'Windows-1250'; // Alapértelmezett magyar Windows encoding
+                // CP852 - OEM codepage magyar Windows-on
+                // ISO-8859-2 (Latin-2) - ANSI codepage magyar karakterekkel
+                // CP1250 - Windows-1250, másik gyakori magyar encoding
+                $entryUtf8 = @iconv('CP852', 'UTF-8', $entry);
+                if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                    $entryUtf8 = @iconv('ISO-8859-2', 'UTF-8', $entry);
                 }
-                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', $detected);
+                if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                    $entryUtf8 = @iconv('CP1250', 'UTF-8', $entry);
+                }
+                if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                    $entryUtf8 = @mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
+                }
             }
 
             if (is_dir($fullPath)) {
@@ -192,11 +199,16 @@ if (isset($_GET['file'])) {
                 // UTF-8-ra konvertáljuk és összehasonlítjuk
                 $entryUtf8 = $entry;
                 if (!mb_check_encoding($entry, 'UTF-8')) {
-                    $detected = mb_detect_encoding($entry, ['UTF-8', 'Windows-1250', 'Windows-1252', 'ISO-8859-2', 'ISO-8859-1'], true);
-                    if ($detected === false) {
-                        $detected = 'Windows-1250';
+                    $entryUtf8 = @iconv('CP852', 'UTF-8', $entry);
+                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                        $entryUtf8 = @iconv('ISO-8859-2', 'UTF-8', $entry);
                     }
-                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', $detected);
+                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                        $entryUtf8 = @iconv('CP1250', 'UTF-8', $entry);
+                    }
+                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
+                        $entryUtf8 = @mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
+                    }
                 }
                 if ($entryUtf8 === $fileName) {
                     $filePath = $dirToSearch . $entry;
