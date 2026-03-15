@@ -1,14 +1,12 @@
 <?php
 // local_photos.php - A megosztó gépén fut
-// Hibák elrejtése, hogy ne rontsák el a JSON kimenetet
-error_reporting(E_ALL);
-ini_set('display_errors', '0');
 
-// Output buffering indítása, hogy elkapjuk a nem kívánt kimeneteket
-ob_start();
+// Hibák elrejtése, hogy ne rontsák el a JSON kimenetet
+// error_reporting(E_ALL);
+// ini_set('display_errors', '0');
 
 // Engedélyezzük a kérést bárhonnan
-header('Access-Control-Allow-Origin: *'); // Hogy a weboldalad elérje
+header('Access-Control-Allow-Origin: *');
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
@@ -20,206 +18,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 header('Content-Type: application/json; charset=utf-8');
 
+include("local_photos_thumbnail.php");
+include("local_photos_get_file_list.php");
+include("local_photos_get_file.php");
+
 $baseDir = 'SharedPhotos/';
+$action = ""; if (isset($_GET['action']) and $_GET['action'] != "") $action = $_GET['action'];
+$path = ""; if (isset($_GET['path']) and $_GET['path'] != "") $path = $_GET['path'];
+$fullPath = $baseDir.$path;
 
-// Thumbnail készítő függvény: 50x50 px, JPEG, 50% minőség
-function createThumbnail($sourcePath, $thumbPath) {
-    // Ellenőrizzük, hogy a forrásfájl létezik és olvasható
-    if (!file_exists($sourcePath) || !is_readable($sourcePath)) {
-        error_log("Thumbnail creation failed: source file not readable: " . $sourcePath);
-        return false;
-    }
-    
-    $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-    switch ($ext) {
-        case 'jpg':
-        case 'jpeg':
-            $img = @imagecreatefromjpeg($sourcePath);
-            break;
-        case 'png':
-            $img = @imagecreatefrompng($sourcePath);
-            break;
-        case 'gif':
-            $img = @imagecreatefromgif($sourcePath);
-            break;
-        default:
-            return false;
-    }
-    if (!$img) {
-        error_log("Thumbnail creation failed: could not create image from: " . $sourcePath);
-        return false;
-    }
-
-    $thumb = imagecreatetruecolor(50, 50);
-    if (!$thumb) {
-        imagedestroy($img);
-        return false;
-    }
-    
-    // PNG és GIF átlátszóság kezelése
-    if ($ext === 'png' || $ext === 'gif') {
-        imagealphablending($thumb, false);
-        imagesavealpha($thumb, true);
-    }
-    imagecopyresampled($thumb, $img, 0, 0, 0, 0, 50, 50, imagesx($img), imagesy($img));
-    $result = @imagejpeg($thumb, $thumbPath, 50);
-    imagedestroy($img);
-    imagedestroy($thumb);
-    return $result;
-}
-
-// 1. Lista kérése
-if (isset($_GET['action']) && $_GET['action'] === 'list') {
-    // Relatív alútvonal kezelése (pl. "kották/")
-    $subPath = '';
-    if (isset($_GET['path'])) {
-        // Biztonsági ellenőrzés: ne engedjünk ki a base könyvtárból
-        $subPath = str_replace('\\', '/', $_GET['path']);
-        $subPath = trim($subPath, '/');
-        if ($subPath !== '') {
-            // ".." kiszűrése
-            $parts = explode('/', $subPath);
-            foreach ($parts as $part) {
-                if ($part === '..' || $part === '.') {
-                    ob_clean();
-                    echo json_encode(array('error' => 'Invalid path'));
-                    exit;
-                }
-            }
-            $subPath .= '/';
-        }
-    }
-    $dir = $baseDir . $subPath;
-
-    $items = array();
-    if (is_dir($dir)) {
-        $handle = opendir($dir);
-        while (false !== ($entry = readdir($handle))) {
-            if ($entry === '.' || $entry === '..') continue;
-            // Kiskép fájlokat ne listázzuk
-            if (substr($entry, -7) === '.kiskep') continue;
-
-            $fullPath = $dir . $entry;
-
-            // Windows-on a readdir() a rendszer encoding-jában adja vissza a fájlneveket
-            // Ha már UTF-8, használjuk; ha nem, ISO-8859-2-ből konvertáljuk
-            if (mb_check_encoding($entry, 'UTF-8')) {
-                $entryUtf8 = $entry;
-            } else {
-                // ISO-8859-2 (Latin-2) tartalmazza az összes magyar karaktert (á, é, í, ó, ú, ö, ü, ő, ű)
-                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
-            }
-
-            if (is_dir($fullPath)) {
-                // Mappa
-                $items[] = array(
-                    'name' => $entryUtf8,
-                    'type' => 'folder',
-                    'date' => date('Y-m-d H:i:s', filemtime($fullPath)),
-                    'thumbnail' => ''
-                );
-            } else {
-                // Fájl - csak képeket listázunk
-                $ext = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
-                if (in_array($ext, array('jpg', 'jpeg', 'png', 'gif'))) {
-                    $thumbName = $entry . '.kiskep';
-                    $thumbPath = $dir . $thumbName;
-
-                    // Thumbnail létrehozása ha még nincs
-                    if (!file_exists($thumbPath)) {
-                        createThumbnail($fullPath, $thumbPath);
-                    }
-
-                    $items[] = array(
-                        'name' => $entryUtf8,
-                        'type' => 'file',
-                        'date' => date('Y-m-d H:i:s', filemtime($fullPath)),
-                        'thumbnail' => $entryUtf8 . '.kiskep'
-                    );
-                }
-            }
-        }
-        closedir($handle);
-    }
-    
-    // Buffer törlése, csak a tiszta JSON-t küldjük
-    ob_clean();
-    
-    $json = json_encode($items);
-    if ($json === false) {
-        error_log("JSON encode failed: " . json_last_error_msg());
-        echo json_encode(array('error' => 'JSON encoding failed: ' . json_last_error_msg()));
-    } else {
-        echo $json;
-    }
-    exit;
-}
-
-// 2. Egy konkrét kép beolvasása Base64-be a küldéshez
-if (isset($_GET['file'])) {
-    $subPath = '';
-    if (isset($_GET['path'])) {
-        $subPath = str_replace('\\', '/', $_GET['path']);
-        $subPath = trim($subPath, '/');
-        if ($subPath !== '') {
-            $parts = explode('/', $subPath);
-            foreach ($parts as $part) {
-                if ($part === '..' || $part === '.') {
-                    ob_clean();
-                    echo json_encode(array('error' => 'Invalid path'));
-                    exit;
-                }
-            }
-            $subPath .= '/';
-        }
-    }
-    
-    // A fájlnév UTF-8-ból érkezik, lehet hogy konvertálni kell a fájlrendszer encoding-jához
-    $fileName = basename($_GET['file']);
-    
-    // Először próbáljuk meg UTF-8 néven (modern PHP-k esetén működhet)
-    $filePath = $baseDir . $subPath . $fileName;
-    
-    // Ha nem létezik UTF-8 néven, konvertáljuk vissza ISO-8859-2-be és próbáljuk újra
-    if (!file_exists($filePath)) {
-        $fileNameDecoded = mb_convert_encoding($fileName, 'ISO-8859-2', 'UTF-8');
-        $filePath = $baseDir . $subPath . $fileNameDecoded;
-    }
-    
-    // Ha még mindig nem találjuk, keressük meg az összes fájl között
-    if (!file_exists($filePath)) {
-        $dirToSearch = $baseDir . $subPath;
-        if (is_dir($dirToSearch)) {
-            $handle = opendir($dirToSearch);
-            while (false !== ($entry = readdir($handle))) {
-                if ($entry === '.' || $entry === '..') continue;
-                // UTF-8-ra konvertáljuk és összehasonlítjuk
-                if (mb_check_encoding($entry, 'UTF-8')) {
-                    $entryUtf8 = $entry;
-                } else {
-                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
-                }
-                if ($entryUtf8 === $fileName) {
-                    $filePath = $dirToSearch . $entry;
-                    break;
-                }
-            }
-            closedir($handle);
-        }
-    }
-    
-    if (file_exists($filePath)) {
-        // Buffer törlése, csak a tiszta JSON-t küldjük
-        ob_clean();
-        
-        $data = file_get_contents($filePath);
-        $type = pathinfo($filePath, PATHINFO_EXTENSION);
-        // Visszaadjuk az adatot, amit a JS közvetlenül elküldhet a Peer-nek
-        echo json_encode(array(
-            'filename' => $_GET['file'],
-            'data' => 'data:image/' . $type . ';base64,' . base64_encode($data)
-        ));
-    }
-    exit;
+switch($action){
+    case "list": // Lista kérése JSON formában
+        getFileList($fullPath);
+        break;
+    case "file": // Egy konkrét kép beolvasása Base64-be a küldéshez
+        echo getFile($fullPath);
+        break;
+    default:
+        break;
 }
 ?>

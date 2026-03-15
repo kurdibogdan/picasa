@@ -22,8 +22,8 @@ function setupDataChannelHandlers(channel) {
             displayImage(msg.image);
             break;
           case "get_file":
-            console.log("Kliens kéri a fájlt: " + msg.filename);
-            await fetchAndSendFile(msg.filename, msg.path || '');
+            console.log("Kliens kéri a fájlt: " + msg.path);
+            await fetchAndSendFile(msg.path);
             break;
           case "get_folder":
             console.log("Kliens kéri a mappa tartalmát: " + msg.path);
@@ -89,9 +89,10 @@ function openFolder(path) {
 }
 
 function getFile(file, path) {
+  // Kombináljuk az útvonalat és a fájlnevet
+  let fullPath = path ? path + '/' + file : file;
   dataChannel.send(JSON.stringify({
     type: 'get_file',
-    filename: file,
-    path: path
+    path: fullPath
   }));
 }

@@ -12,10 +12,10 @@ function setupDataChannelHandlers() {
     // dataChannel.onmessage = async (event) => {
     //     const request = JSON.parse(event.data);
     //     
-    //     // Ha a kliens egy konkrét fájlt kér: { type: 'get_file', filename: 'foto1.jpg' }
+    //     // Ha a kliens egy konkrét fájlt kér: { type: 'get_file', path: 'folder/foto1.jpg' }
     //     if (request.type === 'get_file') {
-    //         console.log("Kliens kéri a fájlt: " + request.filename);
-    //         await fetchAndSendFile(request.filename);
+    //         console.log("Kliens kéri a fájlt: " + request.path);
+    //         await fetchAndSendFile(request.path);
     //     }
     // };
 }
@@ -45,12 +45,10 @@ async function sendLocalFileList(path) {
 }
 
 // 4. Egy konkrét kép beolvasása a helyi PHP-től és küldése
-async function fetchAndSendFile(filename, path) {
+async function fetchAndSendFile(path) {
     try {
-        let url = "local_photos.php?file=" + encodeURIComponent(filename);
-        if (path) {
-            url += '&path=' + encodeURIComponent(path);
-        }
+        let url = "local_photos.php?action=file&path=" + encodeURIComponent(path);
+        
         const response = await fetch(url);
         const fileData = await response.json(); // { filename: '...', data: 'data:image/...' }
         
