@@ -1,0 +1,82 @@
+<!--
+Íme egy minimális HTML és JavaScript vázlat, amely összeköti az eddigi részeket. Ez a felület kezeli a bejelentkezést, listázza a többi online felhasználót, és biztosítja a helyet a képek megjelenítésének.
+A példa a Fetch API-t használja a PHP-val való kommunikációhoz.
+index.html – A központi felület
+-->
+<!DOCTYPE html>
+<html lang="hu">
+ <head>
+  <meta charset="UTF-8">
+  <title>P2P Fotómegosztó</title>
+  <style type="text/css">
+   .peer-list { border: 1px solid #ccc; padding: 10px; width: 200px; cursor: pointer; }
+   .peer-item:hover { background: #eee; }
+   #photo-container img { max-width: 500px; display: block; margin: 10px 0; }
+  </style>
+  <script type="text/javascript" src="app.js"></script>
+  <script type="text/javascript" src="webrtc.js"></script>
+  <script type="text/javascript" src="messaging.js"></script>
+  <script type="text/javascript" src="server-logic.js"></script>
+  <script type="text/javascript" src="view_photos.js"></script>
+ </head>
+<body>
+
+<h1>Saját azonosító: <span id="my-id">...</span></h1>
+<div>
+ <h3>Elérhető kapcsolatok:</h3>
+ <div id="peer-list-container" class="peer-list">Frissítés...</div>
+</div>
+<hr>
+<div id="photo-container">
+ <h3>Megosztott fényképek:</h3>
+ <!-- Ide érkeznek majd a képek a P2P csatornán keresztül -->
+ <div id="file-list"></div>
+ <div id="display-image"></div>
+</div>
+
+<script type="text/javascript">
+// 1. Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
+const myId = 'user_' + Math.random().toString(36).substr(2, 5);
+document.getElementById('my-id').innerText = myId;
+
+// 2. Regisztráljuk magunkat a szerveren és elkezdjük a figyelést
+// A polling elindul, hogy fogadhassuk a WebRTC kéréseket
+startPolling(myId);
+
+// 3. Peer lista frissítése 5 másodpercenként
+async function refreshPeerList() {
+  const response = await fetch('peers.php?action=list&myId=' + myId);
+  const text = await response.text();
+  const peers = JSON.parse(text);
+  const container = document.getElementById('peer-list-container');
+  container.innerHTML = '';
+  
+  // peers.forEach(peerId => {
+  //     const div = document.createElement('div');
+  //     div.className = 'peer-item';
+  //     div.innerText = 'Csatlakozás: ' + peerId;
+  //     div.onclick = () => startConnection(peerId); // webrtc-logic.js függvénye
+  //     container.appendChild(div);
+  // });
+  
+  peers.forEach(peerId => {
+      const div = document.createElement('div');
+      div.className = 'peer-item';
+      div.innerText = 'Csatlakozás: ' + peerId;
+      div.onclick = function() {
+          console.log("Kattintás történt, cél ID: " + peerId);
+          if (typeof startConnection === "function") {
+              startConnection(peerId);
+          } else {
+              console.error("Hiba: A startConnection függvény nem található! Ellenőrizd a .js fájlokat.");
+          }
+      };
+      container.appendChild(div);
+  });            
+}
+
+setInterval(refreshPeerList, 5000);
+refreshPeerList();
+    </script>
+</body>
+</html>
