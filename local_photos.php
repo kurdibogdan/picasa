@@ -101,15 +101,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
 
             $fullPath = $dir . $entry;
 
-            // UTF-8 encoding ellenőrzés és konverzió ha szükséges
+            // UTF-8 verziót készítünk a JSON kimenethez, de az eredeti $entry-t használjuk fájlműveletekhez
+            $entryUtf8 = $entry;
             if (!mb_check_encoding($entry, 'UTF-8')) {
-                $entry = mb_convert_encoding($entry, 'UTF-8', 'auto');
+                // Windows fájlrendszerről érkező fájlnév konvertálása UTF-8-ra
+                // Magyar Windows rendszereken gyakran Windows-1250 vagy CP1252 encoding van
+                $detected = mb_detect_encoding($entry, ['UTF-8', 'Windows-1250', 'Windows-1252', 'ISO-8859-2', 'ISO-8859-1'], true);
+                if ($detected === false) {
+                    $detected = 'Windows-1250'; // Alapértelmezett magyar Windows encoding
+                }
+                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', $detected);
             }
 
             if (is_dir($fullPath)) {
                 // Mappa
                 $items[] = array(
-                    'name' => $entry,
+                    'name' => $entryUtf8,
                     'type' => 'folder',
                     'date' => date('Y-m-d H:i:s', filemtime($fullPath)),
                     'thumbnail' => ''
@@ -127,10 +134,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
                     }
 
                     $items[] = array(
-                        'name' => $entry,
+                        'name' => $entryUtf8,
                         'type' => 'file',
                         'date' => date('Y-m-d H:i:s', filemtime($fullPath)),
-                        'thumbnail' => $thumbName
+                        'thumbnail' => $entryUtf8 . '.kiskep'
                     );
                 }
             }
@@ -169,7 +176,37 @@ if (isset($_GET['file'])) {
             $subPath .= '/';
         }
     }
-    $filePath = $baseDir . $subPath . basename($_GET['file']);
+    
+    // A fájlnév UTF-8-ból érkezik, lehet hogy konvertálni kell a fájlrendszer encoding-jához
+    $fileName = basename($_GET['file']);
+    $filePath = $baseDir . $subPath . $fileName;
+    
+    // Ha nem létezik UTF-8 néven, próbáljuk meg a helyi encoding-gal
+    if (!file_exists($filePath)) {
+        // Megpróbáljuk megtalálni a fájlt az összes fájl között
+        $dirToSearch = $baseDir . $subPath;
+        if (is_dir($dirToSearch)) {
+            $handle = opendir($dirToSearch);
+            while (false !== ($entry = readdir($handle))) {
+                if ($entry === '.' || $entry === '..') continue;
+                // UTF-8-ra konvertáljuk és összehasonlítjuk
+                $entryUtf8 = $entry;
+                if (!mb_check_encoding($entry, 'UTF-8')) {
+                    $detected = mb_detect_encoding($entry, ['UTF-8', 'Windows-1250', 'Windows-1252', 'ISO-8859-2', 'ISO-8859-1'], true);
+                    if ($detected === false) {
+                        $detected = 'Windows-1250';
+                    }
+                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', $detected);
+                }
+                if ($entryUtf8 === $fileName) {
+                    $filePath = $dirToSearch . $entry;
+                    break;
+                }
+            }
+            closedir($handle);
+        }
+    }
+    
     if (file_exists($filePath)) {
         // Buffer törlése, csak a tiszta JSON-t küldjük
         ob_clean();
