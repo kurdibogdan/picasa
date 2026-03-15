@@ -102,12 +102,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
             $fullPath = $dir . $entry;
 
             // Windows-on a readdir() a rendszer encoding-jában adja vissza a fájlneveket
-            // Ha már UTF-8, használjuk; ha nem, ISO-8859-1-ből konvertáljuk
+            // Ha már UTF-8, használjuk; ha nem, ISO-8859-2-ből konvertáljuk
             if (mb_check_encoding($entry, 'UTF-8')) {
                 $entryUtf8 = $entry;
             } else {
-                // ISO-8859-1 (Latin-1) tartalmazza a magyar á karaktert is
-                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-1');
+                // ISO-8859-2 (Latin-2) tartalmazza az összes magyar karaktert (á, é, í, ó, ú, ö, ü, ő, ű)
+                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
             }
 
             if (is_dir($fullPath)) {
@@ -180,9 +180,9 @@ if (isset($_GET['file'])) {
     // Először próbáljuk meg UTF-8 néven (modern PHP-k esetén működhet)
     $filePath = $baseDir . $subPath . $fileName;
     
-    // Ha nem létezik UTF-8 néven, konvertáljuk vissza ISO-8859-1-be és próbáljuk újra
+    // Ha nem létezik UTF-8 néven, konvertáljuk vissza ISO-8859-2-be és próbáljuk újra
     if (!file_exists($filePath)) {
-        $fileNameDecoded = mb_convert_encoding($fileName, 'ISO-8859-1', 'UTF-8');
+        $fileNameDecoded = mb_convert_encoding($fileName, 'ISO-8859-2', 'UTF-8');
         $filePath = $baseDir . $subPath . $fileNameDecoded;
     }
     
@@ -197,7 +197,7 @@ if (isset($_GET['file'])) {
                 if (mb_check_encoding($entry, 'UTF-8')) {
                     $entryUtf8 = $entry;
                 } else {
-                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-1');
+                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
                 }
                 if ($entryUtf8 === $fileName) {
                     $filePath = $dirToSearch . $entry;
