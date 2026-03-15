@@ -101,23 +101,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'list') {
 
             $fullPath = $dir . $entry;
 
-            // UTF-8 verziót készítünk a JSON kimenethez, de az eredeti $entry-t használjuk fájlműveletekhez
-            $entryUtf8 = $entry;
-            if (!mb_check_encoding($entry, 'UTF-8')) {
-                // Windows fájlrendszerről érkező fájlnév konvertálása UTF-8-ra
-                // CP852 - OEM codepage magyar Windows-on
-                // ISO-8859-2 (Latin-2) - ANSI codepage magyar karakterekkel
-                // CP1250 - Windows-1250, másik gyakori magyar encoding
-                $entryUtf8 = @iconv('CP852', 'UTF-8', $entry);
-                if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                    $entryUtf8 = @iconv('ISO-8859-2', 'UTF-8', $entry);
-                }
-                if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                    $entryUtf8 = @iconv('CP1250', 'UTF-8', $entry);
-                }
-                if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                    $entryUtf8 = @mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
-                }
+            // Windows-on a readdir() a rendszer encoding-jában adja vissza a fájlneveket
+            // Ha már UTF-8, használjuk; ha nem, ISO-8859-1-ből konvertáljuk
+            if (mb_check_encoding($entry, 'UTF-8')) {
+                $entryUtf8 = $entry;
+            } else {
+                // ISO-8859-1 (Latin-1) tartalmazza a magyar á karaktert is
+                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-1');
             }
 
             if (is_dir($fullPath)) {
@@ -186,29 +176,28 @@ if (isset($_GET['file'])) {
     
     // A fájlnév UTF-8-ból érkezik, lehet hogy konvertálni kell a fájlrendszer encoding-jához
     $fileName = basename($_GET['file']);
+    
+    // Először próbáljuk meg UTF-8 néven (modern PHP-k esetén működhet)
     $filePath = $baseDir . $subPath . $fileName;
     
-    // Ha nem létezik UTF-8 néven, próbáljuk meg a helyi encoding-gal
+    // Ha nem létezik UTF-8 néven, konvertáljuk vissza ISO-8859-1-be és próbáljuk újra
     if (!file_exists($filePath)) {
-        // Megpróbáljuk megtalálni a fájlt az összes fájl között
+        $fileNameDecoded = mb_convert_encoding($fileName, 'ISO-8859-1', 'UTF-8');
+        $filePath = $baseDir . $subPath . $fileNameDecoded;
+    }
+    
+    // Ha még mindig nem találjuk, keressük meg az összes fájl között
+    if (!file_exists($filePath)) {
         $dirToSearch = $baseDir . $subPath;
         if (is_dir($dirToSearch)) {
             $handle = opendir($dirToSearch);
             while (false !== ($entry = readdir($handle))) {
                 if ($entry === '.' || $entry === '..') continue;
                 // UTF-8-ra konvertáljuk és összehasonlítjuk
-                $entryUtf8 = $entry;
-                if (!mb_check_encoding($entry, 'UTF-8')) {
-                    $entryUtf8 = @iconv('CP852', 'UTF-8', $entry);
-                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                        $entryUtf8 = @iconv('ISO-8859-2', 'UTF-8', $entry);
-                    }
-                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                        $entryUtf8 = @iconv('CP1250', 'UTF-8', $entry);
-                    }
-                    if ($entryUtf8 === false || $entryUtf8 === $entry) {
-                        $entryUtf8 = @mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
-                    }
+                if (mb_check_encoding($entry, 'UTF-8')) {
+                    $entryUtf8 = $entry;
+                } else {
+                    $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-1');
                 }
                 if ($entryUtf8 === $fileName) {
                     $filePath = $dirToSearch . $entry;
