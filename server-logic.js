@@ -21,14 +21,19 @@ function setupDataChannelHandlers() {
 }
 
 // 3. Fájllista lekérése a helyi PHP-től és továbbküldése P2P-n
-async function sendLocalFileList() {
+async function sendLocalFileList(path) {
     try {
-        const response = await fetch(LOCAL_PHP_URL + '?action=list');
+        let url = LOCAL_PHP_URL + '?action=list';
+        if (path) {
+            url += '&path=' + encodeURIComponent(path);
+        }
+        const response = await fetch(url);
         const files = await response.json();
         
         // Elküldjük a listát a távoli kliensnek a P2P csatornán
         dataChannel.send(JSON.stringify({
             type: 'file_list',
+            path: path || '',
             files: files
         }));
     } catch (e) {
@@ -37,9 +42,13 @@ async function sendLocalFileList() {
 }
 
 // 4. Egy konkrét kép beolvasása a helyi PHP-től és küldése
-async function fetchAndSendFile(filename) {
+async function fetchAndSendFile(filename, path) {
     try {
-        const response = await fetch(LOCAL_PHP_URL + '?file=' + encodeURIComponent(filename));
+        let url = LOCAL_PHP_URL + '?file=' + encodeURIComponent(filename);
+        if (path) {
+            url += '&path=' + encodeURIComponent(path);
+        }
+        const response = await fetch(url);
         const fileData = await response.json(); // { filename: '...', data: 'data:image/...' }
         
         // A teljes Base64 kódolt képet átküldjük a P2P csatornán
