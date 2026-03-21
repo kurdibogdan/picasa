@@ -1,19 +1,27 @@
 <!--
-Íme egy minimális HTML és JavaScript vázlat, amely összeköti az eddigi részeket. Ez a felület kezeli a bejelentkezést, listázza a többi online felhasználót, és biztosítja a helyet a képek megjelenítésének.
-A példa a Fetch API-t használja a PHP-val való kommunikációhoz.
 index.html – A központi felület
+Ez a felület kezeli a bejelentkezést, listázza a többi online felhasználót, és biztosítja a helyet a képek megjelenítésének.
+
+TODO:
+- mappába lépéskor nem listázza ki a mappában található fájlokat, mappákat
+- speciális nevű fájlokat nem nyit meg
+- kisképeket nem küldi át a fájllistával együtt, nem jeleníti meg
+  (de valamiért a kisképek neve megjelenik, aminek nem kéne)
+- messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
+- PHP-től jöjjön az peer ID.
+- SQLite3 adatbázis használata.
 -->
 <!DOCTYPE html>
 <html lang="hu">
  <head>
-  <meta charset="UTF-8">
-  <title>P2P Fotómegosztó</title>
+  <meta charset="utf-8">
+  <title>Picasa (P2P Fényképmegosztó)</title>
   <style type="text/css">
    .peer-list { border: 1px solid #ccc; padding: 10px; width: 200px; cursor: pointer; }
    .peer-item:hover { background: #eee; }
    #photo-container img { max-width: 500px; display: block; margin: 10px 0; }
   </style>
-  <script type="text/javascript" src="app.js"></script>
+  <script type="text/javascript" src="js/jquery.1.12.4.min.js"></script>
   <script type="text/javascript" src="webrtc.js"></script>
   <script type="text/javascript" src="messaging.js"></script>
   <script type="text/javascript" src="server-logic.js"></script>
@@ -35,48 +43,16 @@ index.html – A központi felület
 </div>
 
 <script type="text/javascript">
-// 1. Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
-const myId = 'user_' + Math.random().toString(36).substr(2, 5);
-document.getElementById('my-id').innerText = myId;
+// Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
+const myId = "user_" + Math.random().toString(36).substr(2, 5);
+document.getElementById("my-id").innerText = myId;
 
-// 2. Regisztráljuk magunkat a szerveren és elkezdjük a figyelést
-// A polling elindul, hogy fogadhassuk a WebRTC kéréseket
-startPolling(myId);
+// Regisztráljuk magunkat a szerveren és elkezdjük a figyelést, hogy fogadhassuk a WebRTC kéréseket
+startPolling(myId); // messaging.js
 
-// 3. Peer lista frissítése 5 másodpercenként
-async function refreshPeerList() {
-  const response = await fetch('peers.php?action=list&myId=' + myId);
-  const text = await response.text();
-  const peers = JSON.parse(text);
-  const container = document.getElementById('peer-list-container');
-  container.innerHTML = '';
-  
-  // peers.forEach(peerId => {
-  //     const div = document.createElement('div');
-  //     div.className = 'peer-item';
-  //     div.innerText = 'Csatlakozás: ' + peerId;
-  //     div.onclick = () => startConnection(peerId); // webrtc-logic.js függvénye
-  //     container.appendChild(div);
-  // });
-  
-  peers.forEach(peerId => {
-      const div = document.createElement('div');
-      div.className = 'peer-item';
-      div.innerText = 'Csatlakozás: ' + peerId;
-      div.onclick = function() {
-          console.log("Kattintás történt, cél ID: " + peerId);
-          if (typeof startConnection === "function") {
-              startConnection(peerId);
-          } else {
-              console.error("Hiba: A startConnection függvény nem található! Ellenőrizd a .js fájlokat.");
-          }
-      };
-      container.appendChild(div);
-  });            
-}
-
+// Peer lista frissítése 5 másodpercenként
 setInterval(refreshPeerList, 5000);
 refreshPeerList();
-    </script>
+</script>
 </body>
 </html>
