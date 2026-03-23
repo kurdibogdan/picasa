@@ -1,15 +1,15 @@
 <!--
-index.html – A központi felület
-Ez a felület kezeli a bejelentkezést, listázza a többi online felhasználót, és biztosítja a helyet a képek megjelenítésének.
-
-TODO:
-- mappába lépéskor nem listázza ki a mappában található fájlokat, mappákat
-- speciális nevű fájlokat nem nyit meg
-- kisképeket nem küldi át a fájllistával együtt, nem jeleníti meg
-  (de valamiért a kisképek neve megjelenik, aminek nem kéne)
-- messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
-- PHP-től jöjjön az peer ID.
-- SQLite3 adatbázis használata.
+  index.html – A központi felület
+  Ez a felület kezeli a bejelentkezést, listázza a többi online felhasználót, és biztosítja a helyet a képek megjelenítésének.
+  
+  TODO:
+  - mappába lépéskor nem listázza ki a mappában található fájlokat, mappákat
+  - speciális nevű fájlokat nem nyit meg
+  - kisképeket nem küldi át a fájllistával együtt, nem jeleníti meg
+    (de valamiért a kisképek neve megjelenik, aminek nem kéne)
+  - messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
+  - PHP-től jöjjön az peer ID.
+  - SQLite3 adatbázis használata.
 -->
 <!DOCTYPE html>
 <html lang="hu">
@@ -23,8 +23,6 @@ TODO:
   </style>
   <script type="text/javascript" src="js/jquery.1.12.4.min.js"></script>
   <script type="text/javascript" src="webrtc.js"></script>
-  <script type="text/javascript" src="messaging.js"></script>
-  <script type="text/javascript" src="server-logic.js"></script>
   <script type="text/javascript" src="view_photos.js"></script>
  </head>
 <body>
@@ -43,16 +41,42 @@ TODO:
 </div>
 
 <script type="text/javascript">
+const PEER_LIST_REFRESH_INTERVAL = 5000; // ms
+const MESSAGE_POLLING_INTERVAL = 2000; // ms
+
 // Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
 const myId = "user_" + Math.random().toString(36).substr(2, 5);
 document.getElementById("my-id").innerText = myId;
 
-// Regisztráljuk magunkat a szerveren és elkezdjük a figyelést, hogy fogadhassuk a WebRTC kéréseket
-startPolling(myId); // messaging.js
+startRefreshingPeerList();
+startPollingMessages(myId);
 
-// Peer lista frissítése 5 másodpercenként
-setInterval(refreshPeerList, 5000);
-refreshPeerList();
+function startRefreshingPeerList() {
+  $.get("peers.php", {myId: myId}, function(peers){
+    const container = document.getElementById('peer-list-container');
+    container.innerHTML = '';
+    peers.forEach(function(peerId){
+      if (peerId != myId) {
+        const div = document.createElement('div');
+        div.className = "peer-item";
+        div.innerText = "Csatlakozás: " + peerId;
+        div.onclick = function(){startConnection(peerId);}; // webrtc.js
+        container.appendChild(div);
+      }
+    });
+    setTimeout(startRefreshingPeerList, PEER_LIST_REFRESH_INTERVAL);
+  });
+}
+
+function startPollingMessages(myId) {  // Bejövő WebRTC kérések figyelése.
+  $.get("messaging.php", {myId: myId}, function(messages){
+    messages.forEach(function(msg){
+      console.log("Új üzenet érkezett innen:", msg.senderId);
+      handleIncomingSignaling(msg.senderId, msg.payload);  // webrtc.js
+    });
+    setTimeout(function(){startPollingMessages(myId);}, MESSAGE_POLLING_INTERVAL);
+  });
+}
 </script>
 </body>
 </html>

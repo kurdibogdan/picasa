@@ -1,39 +1,32 @@
 <?php
 /*
-peers.php – Online státusz kezelő
-Ezt a fájlt kell meghívni, hogy tudd, ki van éppen az oldalon.
+  peers.php – Online státusz kezelő
+  Ezt a fájlt kell meghívni, hogy tudd, ki van éppen az oldalon.
 */
-// peers.php
-$storage = 'online_peers.json';
-$peers = file_exists($storage) ? json_decode(file_get_contents($storage), true) : array();
-$myId = isset($_GET['myId']) ? $_GET['myId'] : null;
-$action = isset($_GET['action']) ? $_GET['action'] : 'list';
 
+header("Content-Type: application/json");
+
+$STORAGE = "online_peers.json";
+$PEER_EXPIRE_TIME = 15; // másodperc
+
+$peers = file_exists($STORAGE) ? json_decode(file_get_contents($STORAGE), true) : array();
+$myId = isset($_GET['myId']) ? $_GET['myId'] : null;
+
+// Frissítjük a saját időbélyegünket
 if ($myId) {
-    // Frissítjük a saját időbélyegünket
-    $peers[$myId] = time();
+  $peers[$myId] = time();
 }
 
-// Takarítás régebbi szintaktikával:
+// Inaktív peerek törlése:
 $now = time();
 $activePeers = array();
-
 foreach ($peers as $id => $timestamp) {
-    // Aki 15 másodpercen belül jelentkezett, azt megtartjuk
-    if (($now - $timestamp) < 15) {
+    if (($now - $timestamp) < $PEER_EXPIRE_TIME) {
         $activePeers[$id] = $timestamp;
     }
 }
 
-file_put_contents($storage, json_encode($activePeers));
-
-if ($action === 'list') {
-    $resultList = array();
-    foreach ($activePeers as $id => $timestamp) {
-        if ($id !== $myId) {
-            $resultList[] = $id;
-        }
-    }
-    echo json_encode($resultList);
-}
+// Aktív peerek mentése, kilistázása:
+file_put_contents($STORAGE, json_encode($activePeers));  // [ {peerdId: időbélyegző}, ...]
+echo json_encode(array_keys($activePeers));              // [ peerId, peerId, ... ]
 ?>

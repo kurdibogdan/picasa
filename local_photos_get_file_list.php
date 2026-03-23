@@ -9,7 +9,7 @@ function getFileList($folderPath) {
     // Biztonsági ellenőrzés: ".." tiltása
     $parts = explode('/', $folderPath);
     foreach ($parts as $part) {
-        if ($part === '..') {
+        if ($part === "..") {
             return json_encode(array('error' => 'Invalid path'));
         }
     }
@@ -18,16 +18,18 @@ function getFileList($folderPath) {
     if (is_dir($folderPath)) {
         $handle = opendir($folderPath);
         while (false !== ($entry = readdir($handle))) {
+            
+            // Fájlnév ellenőrzése:
             if ($entry === '.' || $entry === '..') continue;
             if (substr($entry, -7) === '.kiskep') continue; // Kiskép fájlokat ne listázzuk
 
             // Windows-on a readdir() a rendszer encoding-jában adja vissza a fájlneveket
             // Ha már UTF-8, használjuk; ha nem, ISO-8859-2-ből konvertáljuk
-            if (mb_check_encoding($entry, 'UTF-8')) {
+            if (mb_check_encoding($entry, "UTF-8")) {
                 $entryUtf8 = $entry;
             } else {
                 // ISO-8859-2 (Latin-2) tartalmazza az összes magyar karaktert (á, é, í, ó, ú, ö, ü, ő, ű)
-                $entryUtf8 = mb_convert_encoding($entry, 'UTF-8', 'ISO-8859-2');
+                $entryUtf8 = mb_convert_encoding($entry, "UTF-8", "ISO-8859-2");
             }
 
             $filePath = $folderPath . $entry;
@@ -60,6 +62,9 @@ function getFileList($folderPath) {
             }
         }
         closedir($handle);
+    }
+    else {
+      echo "Nincs ilyen mappa: $folderPath<br>";
     }
     
     // Rendezés: mappák előre, majd ABC-sorrend

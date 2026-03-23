@@ -49,15 +49,14 @@ async function startConnection(targetPeerId) {
 async function handleIncomingSignaling(senderId, payload) {
     console.log("Beérkező WebRTC üzenet típusa:", payload.type);
     
-    // Ha kapunk valamit, rögzítsük, ki küldte, hogy tudjunk válaszolni
+    // Ha kapunk valamit, rögzítsük, ki küldte, hogy tudjunk válaszolni.
     if (!remotePeerId) remotePeerId = senderId;
-    
     switch(payload.type) {
       case "offer":
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        sendToSignaling(senderId, myId, { type: 'answer', sdp: answer });
+        sendToSignaling(senderId, myId, { type: "answer", sdp: answer });
         break;
       case "answer":
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
@@ -73,4 +72,12 @@ async function handleIncomingSignaling(senderId, payload) {
         console.error("Hiba! Ismeretlen üzenettípus: " + payload.type);
         break;
     }
+}
+
+function sendToSignaling(receiverId, senderId, data) {
+  $.post("messaging.php", JSON.stringify({
+    receiverId: receiverId,
+    senderId: senderId,
+    payload: data // Itt megy majd az SDP vagy ICE candidate
+  }));
 }
