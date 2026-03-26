@@ -1,3 +1,4 @@
 *.kiskep
 messages.json
 online_peers.json
+SharedPhotos/*

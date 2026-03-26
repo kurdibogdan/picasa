@@ -16,14 +16,44 @@
  <head>
   <meta charset="utf-8">
   <title>Picasa (P2P Fényképmegosztó)</title>
-  <style type="text/css">
-   .peer-list { border: 1px solid #ccc; padding: 10px; width: 200px; cursor: pointer; }
-   .peer-item:hover { background: #eee; }
-   #photo-container img { max-width: 500px; display: block; margin: 10px 0; }
-  </style>
   <script type="text/javascript" src="js/jquery.1.12.4.min.js"></script>
   <script type="text/javascript" src="webrtc.js"></script>
   <script type="text/javascript" src="view_photos.js"></script>
+  <style type="text/css">
+   .peer-list { border: 1px solid #ccc; padding: 10px; width: 200px; cursor: pointer; }
+   .peer-item:hover { background: #eee; }
+   .keret {
+     display: inline-block;
+     margin: 10px;
+     box-shadow: 2px 5px 10px 0px rgba(0,0,0,0.2);
+   }
+   .kiskep {
+     width: 100px;
+     height: 100px;
+     text-align: center;
+     background-repeat: no-repeat;
+     background-position: center center;
+     background-size: cover;
+     border: 1px solid #eee;
+   }
+   .kiskep > span {
+     font-size: 100px;
+     line-height: 1em;
+   }
+   .nev {
+     width: 100px;
+     /* word-wrap: break-word; */ /* ha több sorban szeretnénk */
+     white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     text-align: center;
+     font-family: 'Garamond';
+   }
+   .datum {
+     font-size: 12px;
+     text-align: center;
+   }
+  </style>
  </head>
 <body>
 

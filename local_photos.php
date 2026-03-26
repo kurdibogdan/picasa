@@ -19,7 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] == "OPTIONS") {
 //header('Content-Type: application/json; charset=utf-8');
 
 include("local_photos_thumbnail.php");
-include("local_photos_get_file_list.php");
+// include("local_photos_get_file_list.php");
+include("php/fajllista.php");
 include("local_photos_get_file.php");
 
 $baseDir = "SharedPhotos/";
@@ -29,7 +30,8 @@ $fullPath = $baseDir.$path;
 
 switch($action){
     case "list": // Lista kérése JSON formában
-        echo getFileList($fullPath);
+        // echo getFileList($fullPath);
+        echo mappa_tartalma($path);
         break;
     case "file": // Egy konkrét kép beolvasása Base64-be a küldéshez
         echo getFile($fullPath);

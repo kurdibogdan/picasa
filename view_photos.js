@@ -45,28 +45,49 @@ function openFolder(path) {
 }
 
 function displayFileList(files, currentPath) {
-  let t = "<table>";
+  let t = "<div class='nagykeret'>";
+  
   // Ha nem a gyökérben vagyunk, mutassunk "vissza" gombot
   if (currentPath) {
     let parentPath = currentPath.split('/').filter(Boolean);
     parentPath.pop();
     parentPath = parentPath.join('/');
-    t += "<tr><td onclick=\"openFolder('" + parentPath + "')\">&#128281; ..</td><td></td><td></td></tr>";
+    t += "<div class='keret'>"
+       + " <div class='kiskep' onclick=\"openFolder('" + parentPath + "')\">"
+       + "  <span>&#128281;</span>"
+       + " </div>"
+       + " <div class='nev'>..</div>"
+       + " <div class='datum'>&nbsp;</div>"
+       + "</div>";
   }
+  
+  // Mappák kilistázása:
   for (let i = 0; i < files.length; i++) {
     let item = files[i];
-    if (item.type === 'folder') {
-      let folderPath = currentPath ? currentPath + '/' + item.name : item.name;
-      t += "<tr><td onclick=\"openFolder('" + folderPath + "')\">&#128193; " + item.name + "</td>"
-         + "<td>" + item.date + "</td><td></td></tr>";
+    if (item.tipus == "mappa") {
+      let folderPath = currentPath ? currentPath + '/' + item.nev : item.nev;
+      t += "<div class='keret'>"
+         + " <div class='kiskep' onclick=\"openFolder('" + folderPath + "')\">"
+         + "  <span>&#128193;</span>"
+         + " </div>"
+         + " <div class='nev'>" + item.nev + "</div>"
+         + " <div class='datum'>" + item.datum + "</div>"
+         + "</div>";
     } else {
-      t += "<tr><td onclick=\"getFile('" + item.name + "', '" + (currentPath || '') + "')\">"
-         + "&#128247; " + item.name + "</td>"
-         + "<td>" + item.date + "</td>"
-         + "<td>" + item.thumbnail + "</td></tr>";
+      t += "<div class='keret'>"
+         + " <div class='kiskep' "
+         + "      style=\"background-image: url('" + item.kiskep + "');\""  // "&#128247;
+         + "      onclick=\"getFile(" 
+         + "        '" + item.nev + (item.tipus ? "." + item.tipus : "") + "', "
+         + "        '" + (currentPath || '') + "'"
+         + "      );\">"
+         + " </div>"
+         + " <div class='nev'>" + item.nev + "</div>"
+         + " <div class='datum'>" + item.datum + "</div>"
+         + "</div>";
     }
   }
-  t += "</table>";
+  t += "</div>";
   document.getElementById("file-list").innerHTML = t;
 }
 

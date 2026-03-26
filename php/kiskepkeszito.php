@@ -1,6 +1,9 @@
 <?php
-// Kisképkészítő függvény: max 100x100 px, arány megtartásával, JPEG, 60% minőség
 function kiskep_keszitese($kep_utvonal, $kiskep_utvonal) {
+    $MAX_SZELESSEG = 200; // px
+    $MAX_MAGASSAG  = 200; // px
+    $JPEG_MINOSEG  =  60; // %
+    
     if (!file_exists($kep_utvonal) || !is_readable($kep_utvonal)) {
         error_log("Nem sikerült kisképet létrehozni, a fájl nem olvasható: " . $kep_utvonal);
         return false;
@@ -40,12 +43,12 @@ function kiskep_keszitese($kep_utvonal, $kiskep_utvonal) {
     // Maximum 100x100, de legalább egyik oldal 100px
     if ($eredeti_szelesseg >= $eredeti_magassag) {
         // Szélesebb vagy négyzet: szélesség legyen 100px
-        $kiskep_szelesseg = 100;
-        $kiskep_magassag = (int)round((100 * $eredeti_magassag) / $eredeti_szelesseg);
+        $kiskep_szelesseg = $MAX_SZELESSEG;
+        $kiskep_magassag = (int)round(($MAX_MAGASSAG * $eredeti_magassag) / $eredeti_szelesseg);
     } else {
         // Magasabb: magasság legyen 100px
-        $kiskep_magassag = 100;
-        $kiskep_szelesseg = (int)round((100 * $eredeti_szelesseg) / $eredeti_magassag);
+        $kiskep_magassag = $MAX_MAGASSAG;
+        $kiskep_szelesseg = (int)round(($MAX_SZELESSEG * $eredeti_szelesseg) / $eredeti_magassag);
     }
 
     $kiskep = imagecreatetruecolor($kiskep_szelesseg, $kiskep_magassag);
@@ -60,7 +63,7 @@ function kiskep_keszitese($kep_utvonal, $kiskep_utvonal) {
         imagesavealpha($kiskep, true);
     }
     imagecopyresampled($kiskep, $kep, 0, 0, 0, 0, $kiskep_szelesseg, $kiskep_magassag, $eredeti_szelesseg, $eredeti_magassag);
-    $eredmeny = @imagejpeg($kiskep, $kiskep_utvonal, 60);
+    $eredmeny = @imagejpeg($kiskep, $kiskep_utvonal, $JPEG_MINOSEG);
     imagedestroy($kep);
     imagedestroy($kiskep);
     return $eredmeny;
