@@ -40,13 +40,10 @@ function kiskep_keszitese($kep_utvonal, $kiskep_utvonal) {
     $eredeti_magassag = imagesy($kep);
     
     // Arány megtartása mellett számítsuk ki az új méreteket
-    // Maximum 100x100, de legalább egyik oldal 100px
     if ($eredeti_szelesseg >= $eredeti_magassag) {
-        // Szélesebb vagy négyzet: szélesség legyen 100px
         $kiskep_szelesseg = $MAX_SZELESSEG;
         $kiskep_magassag = (int)round(($MAX_MAGASSAG * $eredeti_magassag) / $eredeti_szelesseg);
     } else {
-        // Magasabb: magasság legyen 100px
         $kiskep_magassag = $MAX_MAGASSAG;
         $kiskep_szelesseg = (int)round(($MAX_SZELESSEG * $eredeti_szelesseg) / $eredeti_magassag);
     }

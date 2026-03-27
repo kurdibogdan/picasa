@@ -5,7 +5,8 @@
 */
 
 // Konfiguráció: Ingyenes Google STUN szerverek
-const config = {}; // { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const config = {}; 
+// const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 let pc = new RTCPeerConnection(config);
 let dataChannel;
 let remotePeerId = null; // Fontos: globálisan tároljuk, kivel beszélünk

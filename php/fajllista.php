@@ -1,13 +1,13 @@
 <?php
-
 header('Content-Type: text/html; charset=utf-8');
 
-function mappa_tartalma($mappa) {
+function fajllista($mappa) {
     include("kiskepkeszito.php");
 	$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
-    $MEGOSZTASI_MAPPA = "SharedPhotos";    
+    $MEGOSZTASI_MAPPA = "../SharedPhotos";
 	
     // Normalizáljuk az útvonalat:
+    $mappa = urldecode($mappa);
     $mappa = str_replace('\\', '/', $mappa);
     $mappa = trim($mappa, '/') . '/';
     $darabok = explode('/', $mappa);
@@ -20,14 +20,13 @@ function mappa_tartalma($mappa) {
     
     // Karakterkódolás beállítása:
     if ($LOCALHOST == true) {
-        $mappa = iconv("UTF-8", "ISO-8859-1//TRANSLIT", urldecode($mappa));
+        $mappa = mb_convert_encoding($mappa, "ISO-8859-1", "UTF-8");
     }
     else {
         $mappa = urldecode($mappa);
     }
     
     if (!is_dir($mappa)) {
-        // echo "Nincs ilyen mappa: $mappa<br>-> Alap mappa beállítása.<br>";
         $mappa = $MEGOSZTASI_MAPPA;
     }
     
@@ -36,13 +35,13 @@ function mappa_tartalma($mappa) {
     $b = array();
     while(($fajl=$a->read()) !== false)
     {
+        $c = array();
+        
+        // Útvonal:
         if ($fajl == "." or $fajl == "..") continue;
         if ($mappa == $MEGOSZTASI_MAPPA and $fajl == "..") continue;
         if (substr($fajl, -7) === '.kiskep') continue;
-        
         $teljes_utvonal = $mappa."/".$fajl;
-        
-        $c = array();
         
         // Név:
         if ($fajl == ".." or !is_file($teljes_utvonal)){
@@ -76,14 +75,18 @@ function mappa_tartalma($mappa) {
           }
           $c['kiskep'] = "data:image/jpg;base64,".base64_encode(file_get_contents($kiskep_utvonal));          
         }
+        
         array_push($b, $c);
     }
     
-    // Betűrendbe rendezés buborékrendezéssel:
+    // Buborékrendezés:
     for ($n=sizeof($b); $n>1; $n=$n-1){
       for ($i=0; $i<$n-1; $i=$i+1){
-        if (($b[$i]['tipus'] != "mappa" and $b[$i+1]['tipus'] == "mappa") or
-            (strtolower($b[$i]['nev']) > strtolower($b[$i+1]['nev']))) {
+        if (($b[$i]['tipus'] != "mappa" and 
+             $b[$i+1]['tipus'] == "mappa") // elöl a mappák
+               or 
+            (strtolower($b[$i]['nev']) > 
+             strtolower($b[$i+1]['nev']))) {  // betűrend
           $z = $b[$i];
           $b[$i] = $b[$i+1];
           $b[$i+1] = $z;
@@ -92,6 +95,5 @@ function mappa_tartalma($mappa) {
     }
     
     echo json_encode($b);
-    //print_r($b);
 }
 ?>

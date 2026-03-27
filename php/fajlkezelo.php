@@ -17,24 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] == "OPTIONS") {
 }
 
 //header('Content-Type: application/json; charset=utf-8');
+include("fajllista.php");
+include("fajl_letoltese.php");
 
-include("local_photos_thumbnail.php");
-// include("local_photos_get_file_list.php");
-include("php/fajllista.php");
-include("local_photos_get_file.php");
-
-$baseDir = "SharedPhotos/";
 $action = ""; if (isset($_GET['action']) and $_GET['action'] != "") $action = $_GET['action'];
 $path = ""; if (isset($_GET['path']) and $_GET['path'] != "") $path = $_GET['path'];
-$fullPath = $baseDir.$path;
 
 switch($action){
     case "list": // Lista kérése JSON formában
-        // echo getFileList($fullPath);
-        echo mappa_tartalma($path);
+        echo fajllista($path);
         break;
     case "file": // Egy konkrét kép beolvasása Base64-be a küldéshez
-        echo getFile($fullPath);
+        echo fajl_letoltese($path);
         break;
     default:
         break;

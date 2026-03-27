@@ -25,7 +25,7 @@ async function processMessage(msg){
       break;
     case "get_file":
       console.log("Kliens kéri a fájlt: " + msg.path);
-      await fetchAndSendFile(msg.path);
+      fetchAndSendFile(msg.path);
       break;
     case "get_folder":
       console.log("Kliens kéri a mappa tartalmát: " + msg.path);
@@ -104,44 +104,30 @@ function getFile(file, path) {
 }
 
 // Egy konkrét kép beolvasása a helyi PHP-től és küldése
-async function fetchAndSendFile(path) {
-    try {
-        let url = "local_photos.php?action=file&path=" + encodeURIComponent(path);
-        
-        const response = await fetch(url);
-        const fileData = await response.json(); // { filename: '...', data: 'data:image/...' }
-        
-        // A teljes Base64 kódolt képet átküldjük a P2P csatornán
-        dataChannel.send(JSON.stringify({
-            type: 'image_data',
-            filename: fileData.filename,
-            image: fileData.data
-        }));
-    } catch (e) {
-        console.error("Hiba a kép beolvasásakor:", e);
-    }
+function fetchAndSendFile(path) {
+  $.get("php/fajlkezelo.php", {
+    "action": "file",
+    "path": encodeURIComponent(path)
+  }, function(data) {
+    dataChannel.send(JSON.stringify({
+      type: 'image_data',
+      image: data
+    }));
+  });
 }
 
 // Fájllista lekérése a helyi PHP-től és továbbküldése P2P-n
 async function sendLocalFileList(path) {
-    try {
-        let url = "local_photos.php?action=list";
-        if (path) {
-            url += '&path=' + encodeURIComponent(path);
-        }
-        const response = await fetch(url);
-        console.log("path: " + path);
-        console.log("response: " + response);
-        const files = await response.json();
-        
-        
-        // Elküldjük a listát a távoli kliensnek a P2P csatornán
-        dataChannel.send(JSON.stringify({
-            type: 'file_list',
-            path: path || '',
-            files: files
-        }));
-    } catch (e) {
-        console.error("Nem sikerült elérni a helyi PHP-t! Fut a localhost:8000?", e);
-    }
+  $.get("php/fajlkezelo.php", {
+    "action": "list",
+    "path": encodeURIComponent(path)
+  }, 
+  function(data) {
+    console.log(data);
+    dataChannel.send(JSON.stringify({
+      type: "file_list",
+      path: (path || ''),
+      files: JSON.parse(data)
+    }));
+  });
 }
