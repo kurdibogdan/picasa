@@ -4,13 +4,17 @@
   A WebRTC kézfogás folyamata sima JS-el.
 */
 
-// Konfiguráció: Ingyenes Google STUN szerverek
-const config = {};   // böngésző alapértelmezett STUN/TURN szerverét használja
-// const config = { iceServers: [] };  // teljesen letiltja a STUN/TURN szerver használatát
-// const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // Google-t használatát
-// Firefoxban ki kell kapcsolni:
-//     media.peerconnection.ice.obfuscate_host_addresses
-
+// Konfiguráció:
+// const config = {};
+//      A böngésző alapértelmezett STUN/TURN szerverét használja.
+//      Localhoston helyi IP-hez köti, ami nem fog működni távoli szerveren.
+//      Firefoxban ki kell kapcsolni: media.peerconnection.ice.obfuscate_host_addresses
+//      Sajnos még ez sem segít, kellene indítani helyi STUN/TURN szervert.
+// const config = { iceServers: [] };
+//      Teljesen letiltja a STUN/TURN szerver használatát.
+//      Ez sem helyi szerveren, sem távolin nem működött.
+const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+//      Google szerverét állítja be explicit módon, így a helyi és távoli peerek megtalálják egymást.
 
 let pc = new RTCPeerConnection(config);
 let dataChannel;
