@@ -1,7 +1,13 @@
 <!--
   TODO:
+  - peers.php most nem egységes.
+    > Be van állítva, hogy a szerverre dolgozzon,
+    > ugyanakkor más PHP szkriptek még helyileg tárolják a dolgokat (pl. üzeneteket).
+    > Emiatt nem tud helyi és távoli peer összekapcsolódni.
+    > Tesztelni most csak távoli szerveren lehet!
+  
   - messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
-  - PHP-től jöjjön az peer ID.
+  - PHP-től jöjjön a peer ID (ne random string legyen).
   - SQLite3 adatbázis használata.
   - felhasználónév URL-ből / bejelentkezésből
     > felhasználó nevéhez mappa ikont jelenítsen meg, amire az elérhető menük jelenjenek meg:
