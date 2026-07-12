@@ -1,7 +1,5 @@
 <?php
 // local_photos.php - A megosztó gépén fut
-
-// Hibák elrejtése, hogy ne rontsák el a JSON kimenetet
 // error_reporting(E_ALL);
 // ini_set('display_errors', '0');
 

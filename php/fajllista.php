@@ -1,12 +1,10 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$MEGOSZTASI_MAPPA = "../SharedPhotos";
+$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
 
-function fajllista($mappa) {
-    include("kiskepkeszito.php");
-	$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
-    $MEGOSZTASI_MAPPA = "../SharedPhotos";
-	
-    // Normalizáljuk az útvonalat:
+function utvonal_normalizalasa($mappa) {
+    global $MEGOSZTASI_MAPPA;
     $mappa = urldecode($mappa);
     $mappa = str_replace('\\', '/', $mappa);
     $mappa = trim($mappa, '/') . '/';
@@ -17,14 +15,27 @@ function fajllista($mappa) {
       }
     }
     $mappa = $MEGOSZTASI_MAPPA."/".$mappa;
-    
-    // Karakterkódolás beállítása:
+    return($mappa);
+}
+
+function karakterkodolas_beallitasa($szoveg) {
+    global $LOCALHOST;
     if ($LOCALHOST == true) {
-        $mappa = mb_convert_encoding($mappa, "ISO-8859-1", "UTF-8");
+        $szoveg = mb_convert_encoding($szoveg, "ISO-8859-1", "UTF-8");
     }
     else {
-        $mappa = urldecode($mappa);
+        $szoveg = urldecode($szoveg);
     }
+    return($szoveg);
+}
+
+function fajllista($mappa) {
+    global $MEGOSZTASI_MAPPA;
+    global $LOCALHOST;
+    include("kiskepkeszito.php");
+	
+    $mappa = utvonal_normalizalasa($mappa);
+    $mappa = karakterkodolas_beallitasa($mappa);
     
     if (!is_dir($mappa)) {
         $mappa = $MEGOSZTASI_MAPPA;
