@@ -1,12 +1,19 @@
 <!--
   TODO:
-  - mappába lépéskor nem listázza ki a mappában található fájlokat, mappákat
-  - speciális nevű fájlokat nem nyit meg
-  - kisképeket nem küldi át a fájllistával együtt, nem jeleníti meg
-    (de valamiért a kisképek neve megjelenik, aminek nem kéne)
   - messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
   - PHP-től jöjjön az peer ID.
   - SQLite3 adatbázis használata.
+  - felhasználónév URL-ből / bejelentkezésből
+    > felhasználó nevéhez mappa ikont jelenítsen meg, amire az elérhető menük jelenjenek meg:
+      -> fájlböngésző
+      -> chat (videó)
+  - fényképeket képnéző üzemmódban jelenítse meg
+  - szöveget is jelenítsen meg
+  - explorer / commander nézet váltogatása
+  - nagy ikonok, részletek nézet
+  - fájlmozgatás (másolás, áthelyezés, törlés, letöltés)
+    > mappákat is
+  - közvetlen linkek (felhasználóhoz, fájlhoz, egyéb menühöz)
 -->
 <!DOCTYPE html>
 <html lang="hu">
@@ -40,18 +47,18 @@ const PEER_LIST_REFRESH_INTERVAL = 5000; // ms
 const MESSAGE_POLLING_INTERVAL = 2000; // ms
 
 // Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
-const myId = "user_" + Math.random().toString(36).substr(2, 5);
-document.getElementById("my-id").innerText = myId;
+const sajat_id = "user_" + Math.random().toString(36).substr(2, 5);
+document.getElementById("my-id").innerText = sajat_id;
 
 startRefreshingPeerList();
-startPollingMessages(myId);
+startPollingMessages(sajat_id);
 
 function startRefreshingPeerList() {
-  $.get("peers.php", {myId: myId}, function(peers){
+  $.get("peers.php", {sajat_id: sajat_id}, function(peers){
     const container = document.getElementById('peer-list-container');
     container.innerHTML = '';
     peers.forEach(function(peerId){
-      if (peerId != myId) {
+      if (peerId != sajat_id) {
         const div = document.createElement('div');
         div.className = "peer-item";
         div.innerText = "Csatlakozás: " + peerId;
@@ -63,13 +70,13 @@ function startRefreshingPeerList() {
   });
 }
 
-function startPollingMessages(myId) {  // Bejövő WebRTC kérések figyelése.
-  $.get("messaging.php", {myId: myId}, function(messages){
+function startPollingMessages(sajat_id) {  // Bejövő WebRTC kérések figyelése.
+  $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(messages){
     messages.forEach(function(msg){
       console.log("Új üzenet érkezett innen:", msg.senderId);
       handleIncomingSignaling(msg.senderId, msg.payload);  // webrtc.js
     });
-    setTimeout(function(){startPollingMessages(myId);}, MESSAGE_POLLING_INTERVAL);
+    setTimeout(function(){startPollingMessages(sajat_id);}, MESSAGE_POLLING_INTERVAL);
   });
 }
 

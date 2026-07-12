@@ -5,8 +5,13 @@
 */
 
 // Konfiguráció: Ingyenes Google STUN szerverek
-const config = {}; 
-// const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const config = {};   // böngésző alapértelmezett STUN/TURN szerverét használja
+// const config = { iceServers: [] };  // teljesen letiltja a STUN/TURN szerver használatát
+// const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // Google-t használatát
+// Firefoxban ki kell kapcsolni:
+//     media.peerconnection.ice.obfuscate_host_addresses
+
+
 let pc = new RTCPeerConnection(config);
 let dataChannel;
 let remotePeerId = null; // Fontos: globálisan tároljuk, kivel beszélünk
@@ -15,7 +20,7 @@ let remotePeerId = null; // Fontos: globálisan tároljuk, kivel beszélünk
 pc.onicecandidate = (event) => {
     if (event.candidate && remotePeerId) {
         console.log("ICE candidate küldése...");
-        sendToSignaling(remotePeerId, myId, { type: 'candidate', candidate: event.candidate });
+        sendToSignaling(remotePeerId, sajat_id, { type: 'candidate', candidate: event.candidate });
     }
 };
 
@@ -39,7 +44,7 @@ async function startConnection(targetPeerId) {
     try {
       var offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      sendToSignaling(targetPeerId, myId, { type: 'offer', sdp: offer });
+      sendToSignaling(targetPeerId, sajat_id, { type: 'offer', sdp: offer });
     } catch (e) {
       console.error("Hiba az offer létrehozásakor:", e);
     }
@@ -57,7 +62,7 @@ async function handleIncomingSignaling(senderId, payload) {
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        sendToSignaling(senderId, myId, { type: "answer", sdp: answer });
+        sendToSignaling(senderId, sajat_id, { type: "answer", sdp: answer });
         break;
       case "answer":
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
@@ -76,7 +81,7 @@ async function handleIncomingSignaling(senderId, payload) {
 }
 
 function sendToSignaling(receiverId, senderId, data) {
-  $.post("messaging.php", JSON.stringify({
+  $.post("php/uzenetek_kuldese.php", JSON.stringify({
     receiverId: receiverId,
     senderId: senderId,
     payload: data // Itt megy majd az SDP vagy ICE candidate
