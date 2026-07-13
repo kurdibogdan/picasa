@@ -60,7 +60,8 @@ startRefreshingPeerList();
 startPollingMessages(sajat_id);
 
 function startRefreshingPeerList() {
-  $.get("peers.php", {sajat_id: sajat_id}, function(peers){
+  $.get("peerek.php", {sajat_id: sajat_id}, function(peers){
+    console.log(peers);
     const container = document.getElementById('peer-list-container');
     container.innerHTML = '';
     peers.forEach(function(peerId){
@@ -78,6 +79,7 @@ function startRefreshingPeerList() {
 
 function startPollingMessages(sajat_id) {  // Bejövő WebRTC kérések figyelése.
   $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(messages){
+  console.log(messages);
     messages.forEach(function(msg){
       console.log("Új üzenet érkezett innen:", msg.senderId);
       handleIncomingSignaling(msg.senderId, msg.payload);  // webrtc.js

@@ -22,6 +22,7 @@ let remotePeerId = null; // Fontos: globálisan tároljuk, kivel beszélünk
 
 // 1. ICE Candidate kezelés
 pc.onicecandidate = (event) => {
+    console.log("ICE Candidate");
     if (event.candidate && remotePeerId) {
         console.log("ICE candidate küldése...");
         sendToSignaling(remotePeerId, sajat_id, { type: 'candidate', candidate: event.candidate });
@@ -89,5 +90,7 @@ function sendToSignaling(receiverId, senderId, data) {
     receiverId: receiverId,
     senderId: senderId,
     payload: data // Itt megy majd az SDP vagy ICE candidate
-  }));
+  }), function(data){
+    console.log(data);
+  });
 }
