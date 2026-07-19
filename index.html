@@ -1,9 +1,15 @@
 <!--
   TODO: 
-  - felhasználónév URL-ből / bejelentkezésből
-    > felhasználó nevéhez mappa ikont jelenítsen meg, amire az elérhető menük jelenjenek meg:
+  - felhasználónév URL-ből / bejelentkezésből (de mindig új ID-t kap a tiszta kapcsolatokért)
+    > felhasználó nevéhez ikonokat jelenítsen meg programok indítására:
       -> fájlböngésző
       -> chat (videó)
+  - A kurdi.eu szerver is jelenjen meg egy felhasználóként, de nála csak fájlböngésző van.
+  - A kurdi.eu szerver kódját különítsük el a kliens kódoktól.
+    > A kliensnek nem kell adatbázis.
+    > A kliens PHP szkriptjei sokkal egyszerűbbek, gyakorlatilag csak a szerverről kér le adatot.
+      Ez később könnyen helyettesíthető más technológiával (pl. HTA alkalmazás).
+      Sajnos IE11 nem támogatja a WebRTC-t.
   - fényképeket képnéző üzemmódban jelenítse meg
   - szöveget is jelenítsen meg
   - explorer / commander nézet váltogatása
@@ -11,6 +17,8 @@
   - fájlmozgatás (másolás, áthelyezés, törlés, letöltés)
     > mappákat is
   - közvetlen linkek (felhasználóhoz, fájlhoz, egyéb menühöz)
+  - HIBA: Egyszerre 2 peerhez nem tud kapcsolódni.
+  - HIBA: Ha szerverről jelentkezik be valaki, akkor a szerver mappáját listázza ki sajátként.
 -->
 <!DOCTYPE html>
 <html lang="hu">

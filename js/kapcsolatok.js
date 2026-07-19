@@ -13,8 +13,8 @@ function bejelentkezes(callback) {
 
 function kapcsolatok_periodikus_frissitese() {
   $.get("php/kapcsolatok_frissitese.php", {sajat_id: sajat_id}, function(data){
-    // if (peers.length > 0) console.log(peers);
-    peers = jQuery.parseJSON(data);
+    if (data.length > 0) console.log(data);
+    var peers = jQuery.parseJSON(data);
     const container = document.getElementById('peer-list-container');
     container.innerHTML = '';
     peers.forEach(function(peerObj){
@@ -32,8 +32,8 @@ function kapcsolatok_periodikus_frissitese() {
 
 function uzenetek_periodikus_olvasasa() {
   $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(data){
-    // if (uzenetek.length > 0) console.log(uzenetek);
-    uzenetek = jQuery.parseJSON(data);
+    if (data.length > 0) console.log(data);
+    var uzenetek = jQuery.parseJSON(data);
     uzenetek.forEach(function(uzenet){
       console.log("Új üzenet érkezett innen:", uzenet.kuldo_id);
       handleIncomingSignaling(uzenet.kuldo_id, jQuery.parseJSON(uzenet.torzs));  // webrtc.js
