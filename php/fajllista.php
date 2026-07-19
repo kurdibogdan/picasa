@@ -1,7 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
-$MEGOSZTASI_MAPPA = "../SharedPhotos";
-$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
+include("kapcsolat.php");
 
 function utvonal_normalizalasa($mappa) {
     global $MEGOSZTASI_MAPPA;

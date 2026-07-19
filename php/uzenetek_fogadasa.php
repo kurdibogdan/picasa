@@ -4,8 +4,9 @@
 
 // error_reporting(0);
 header("Content-Type: application/json");
-$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
-$sajat_id = isset($_GET['sajat_id']) ? $_GET['sajat_id'] : "";
+include("kapcsolat.php");
+
+$sajat_id = get("sajat_id");
 
 if ($LOCALHOST === true) {
     // Ha helyileg fut, akkor a távoli szerverről kéri le az üzeneteket.

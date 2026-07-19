@@ -1,8 +1,9 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+include("kapcsolat.php");
 
 function fajl_letoltese($utvonal) {
-	$LOCALHOST = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']);
+	global $LOCALHOST;
     $MEGOSZTASI_MAPPA = "../SharedPhotos";
 
     // Normalizáljuk az elérési utat

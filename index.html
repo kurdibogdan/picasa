@@ -1,11 +1,5 @@
 <!--
-  TODO:
-  - peers.php most nem egységes.
-    > Be van állítva, hogy a szerverre dolgozzon,
-    > ugyanakkor más PHP szkriptek még helyileg tárolják a dolgokat (pl. üzeneteket).
-    > Emiatt nem tud helyi és távoli peer összekapcsolódni.
-    > Tesztelni most csak távoli szerveren lehet!
-  
+  TODO: 
   - messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
   - PHP-től jöjjön a peer ID (ne random string legyen).
   - SQLite3 adatbázis használata.
@@ -60,7 +54,7 @@ startRefreshingPeerList();
 startPollingMessages(sajat_id);
 
 function startRefreshingPeerList() {
-  $.get("peerek.php", {sajat_id: sajat_id}, function(peers){
+  $.get("php/kapcsolatok.php", {sajat_id: sajat_id}, function(peers){
     console.log(peers);
     const container = document.getElementById('peer-list-container');
     container.innerHTML = '';
@@ -79,7 +73,7 @@ function startRefreshingPeerList() {
 
 function startPollingMessages(sajat_id) {  // Bejövő WebRTC kérések figyelése.
   $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(messages){
-  console.log(messages);
+    if (messages.length > 0) console.log(messages);
     messages.forEach(function(msg){
       console.log("Új üzenet érkezett innen:", msg.senderId);
       handleIncomingSignaling(msg.senderId, msg.payload);  // webrtc.js
