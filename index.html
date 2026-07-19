@@ -1,8 +1,5 @@
 <!--
   TODO: 
-  - messaging.php: A régi üzeneteket törölje, amik nem lettek kézbesítve.
-  - PHP-től jöjjön a peer ID (ne random string legyen).
-  - SQLite3 adatbázis használata.
   - felhasználónév URL-ből / bejelentkezésből
     > felhasználó nevéhez mappa ikont jelenítsen meg, amire az elérhető menük jelenjenek meg:
       -> fájlböngésző
@@ -22,6 +19,7 @@
   <title>Picasa (P2P Fényképmegosztó)</title>
   <script type="text/javascript" src="js/jquery.1.12.4.min.js"></script>
   <script type="text/javascript" src="js/webrtc.js"></script>
+  <script type="text/javascript" src="js/kapcsolatok.js"></script>
   <script type="text/javascript" src="js/view_photos.js"></script>
   <link rel="stylesheet" type="text/css" href="stiluslap.css">
   <style type="text/css">
@@ -29,7 +27,7 @@
  </head>
 <body>
 
-<h1>Saját azonosító: <span id="my-id">...</span></h1>
+<h1>Saját azonosító: <span id="sajat_id">...</span></h1>
 <div>
  <h3>Elérhető kapcsolatok:</h3>
  <div id="peer-list-container" class="peer-list">Frissítés...</div>
@@ -43,45 +41,11 @@
 </div>
 
 <script type="text/javascript">
-const PEER_LIST_REFRESH_INTERVAL = 5000; // ms
-const MESSAGE_POLLING_INTERVAL = 2000; // ms
-
-// Generálunk egy egyedi ID-t (vagy a PHP is adhatná)
-const sajat_id = "user_" + Math.random().toString(36).substr(2, 5);
-document.getElementById("my-id").innerText = sajat_id;
-
-startRefreshingPeerList();
-startPollingMessages(sajat_id);
-
-function startRefreshingPeerList() {
-  $.get("php/kapcsolatok.php", {sajat_id: sajat_id}, function(peers){
-    console.log(peers);
-    const container = document.getElementById('peer-list-container');
-    container.innerHTML = '';
-    peers.forEach(function(peerId){
-      if (peerId != sajat_id) {
-        const div = document.createElement('div');
-        div.className = "peer-item";
-        div.innerText = "Csatlakozás: " + peerId;
-        div.onclick = function(){startConnection(peerId);}; // webrtc.js
-        container.appendChild(div);
-      }
-    });
-    setTimeout(startRefreshingPeerList, PEER_LIST_REFRESH_INTERVAL);
-  });
-}
-
-function startPollingMessages(sajat_id) {  // Bejövő WebRTC kérések figyelése.
-  $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(messages){
-    if (messages.length > 0) console.log(messages);
-    messages.forEach(function(msg){
-      console.log("Új üzenet érkezett innen:", msg.senderId);
-      handleIncomingSignaling(msg.senderId, msg.payload);  // webrtc.js
-    });
-    setTimeout(function(){startPollingMessages(sajat_id);}, MESSAGE_POLLING_INTERVAL);
-  });
-}
-
+bejelentkezes(function(){
+  $("#sajat_id").text(sajat_id);
+  kapcsolatok_periodikus_frissitese();
+  uzenetek_periodikus_olvasasa();
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,5 @@
+mysql  : $kapcsolat->insert_id
+sqlite : $kapcsolat->lastInsertId()
+
+mysql  : $kapcsolat->fetch_assoc()
+sqlite : $kapcsolat->fetchArray(SQLITE3_ASSOC)

@@ -2,8 +2,7 @@
 // Üzenetek fogadása - ID alapján visszaadja a felhasználónak szánt üzeneteket.
 // Amit továbbít, azt törli is az adatbázisból.
 
-// error_reporting(0);
-header("Content-Type: application/json");
+// header("Content-Type: application/json");
 include("kapcsolat.php");
 
 $sajat_id = get("sajat_id");
@@ -13,40 +12,26 @@ if ($LOCALHOST === true) {
     echo file_get_contents("https://kurdi.eu/bogdan/picasa/php/uzenetek_fogadasa.php?sajat_id=$sajat_id");
 }
 else {
-    // Ha szerveren fut, akkor a szerveren lévő adatbázisból kéri le az üzeneteket.
-    $DB = "messages.json";
-
-    /*
-         (start transaction)
-         
-         SELECT *
-         FROM uzenetek
-         WHERE id = '$sajat_id';
-         
-         DELETE
-         FROM uzenetek
-         WHERE id = '$sajat_id';
-
-         (end transaction)
-    */
-
-    $sajat_uzenetek = array();
+    // Ha szerveren fut, akkor a szerveren lévő adatbázisból kéri le az üzeneteket.    
+    // Új üzenetek olvasása:
+    $q = $kapcsolat->query("
+      SELECT *
+      FROM uzenetek
+      WHERE cimzett_id = '$sajat_id';
+    ");
+    $uzenetek = array();
+    while ($uzenet = $q->fetch(PDO::FETCH_ASSOC))
+      array_push($uzenetek, $uzenet);
     
-    if (file_exists($DB)) {
-      $minden_uzenet = json_decode(file_get_contents($DB), true);
-      
-      if (is_array($minden_uzenet)) {
-        $kezbesitetlen_uzenetek = array();
-        foreach ($minden_uzenet as $uzenet) {
-          if (isset($uzenet['receiverId']) and $uzenet['receiverId'] === $sajat_id) {
-              array_push($sajat_uzenetek, $uzenet);
-          } else {
-            array_push($kezbesitetlen_uzenetek, $uzenet);
-          }
-        }
-        file_put_contents($DB, json_encode($kezbesitetlen_uzenetek));
-      }
-    }
-    echo json_encode(array_values($sajat_uzenetek));
+    // Régi üzenetek törlése:
+    $kapcsolat->query("
+      DELETE
+      FROM uzenetek
+      WHERE cimzett_id = '$sajat_id';
+    ");
+    
+    $kapcsolat = null;
+    
+    echo json_encode($uzenetek);
 }
 ?>

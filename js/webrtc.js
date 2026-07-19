@@ -57,39 +57,39 @@ async function startConnection(targetPeerId) {
 }
 
 // 3. Beérkező üzenetek feldolgozása (Polling hívja meg a messaging.js-ből)
-async function handleIncomingSignaling(senderId, payload) {
-    console.log("Beérkező WebRTC üzenet típusa:", payload.type);
+async function handleIncomingSignaling(kuldo_id, torzs) {
+    console.log("Beérkező WebRTC üzenet típusa:", torzs.type);
     
     // Ha kapunk valamit, rögzítsük, ki küldte, hogy tudjunk válaszolni.
-    if (!remotePeerId) remotePeerId = senderId;
-    switch(payload.type) {
+    if (!remotePeerId) remotePeerId = kuldo_id;
+    switch(torzs.type) {
       case "offer":
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        await pc.setRemoteDescription(new RTCSessionDescription(torzs.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        sendToSignaling(senderId, sajat_id, { type: "answer", sdp: answer });
+        sendToSignaling(kuldo_id, sajat_id, { type: "answer", sdp: answer });
         break;
       case "answer":
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        await pc.setRemoteDescription(new RTCSessionDescription(torzs.sdp));
         break;
       case "candidate":
         try {
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            await pc.addIceCandidate(new RTCIceCandidate(torzs.candidate));
         } catch (e) {
             console.error("Hiba az ICE candidate hozzáadásakor:", e);
         }
         break;
       default:
-        console.error("Hiba! Ismeretlen üzenettípus: " + payload.type);
+        console.error("Hiba! Ismeretlen üzenettípus: " + torzs.type);
         break;
     }
 }
 
-function sendToSignaling(receiverId, senderId, data) {
+function sendToSignaling(cimzett_id, kuldo_id, data) {
   $.post("php/uzenetek_kuldese.php", JSON.stringify({
-    receiverId: receiverId,
-    senderId: senderId,
-    payload: data // Itt megy majd az SDP vagy ICE candidate
+    cimzett_id: cimzett_id,
+    kuldo_id: kuldo_id,
+    torzs: data // Itt megy majd az SDP vagy ICE candidate
   }), function(data){
     console.log(data);
   });

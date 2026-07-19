@@ -1,6 +1,4 @@
 <?php
-// error_reporting(0);
-// header("Content-Type: application/json");
 include("kapcsolat.php");
 
 if ($LOCALHOST === true) {
@@ -20,20 +18,19 @@ if ($LOCALHOST === true) {
 }
 else {
     // Ha távoli szerveren fut, akkor a távoli adatbázisba mentjük az üzenetet.
-    $DB = "messages.json";
 
-    // Üzenet fogadása:
     if ($_SERVER['REQUEST_METHOD'] === "POST") {
       $uzenet = json_decode(file_get_contents("php://input"), true);
       
       if ($uzenet) {
-        $uzenetek = file_exists($DB)
-                  ? json_decode(file_get_contents($DB), true)
-                  : array();
-        if (!is_array($uzenetek)){$uzenetek = array();}
-        
-        array_push($uzenetek, $uzenet);
-        file_put_contents($DB, json_encode($uzenetek));
+        $kapcsolat->query("
+          INSERT INTO uzenetek (kuldo_id, cimzett_id, torzs)
+          VALUES (
+            '".$uzenet['kuldo_id']."',
+            '".$uzenet['cimzett_id']."',
+            '".json_encode($uzenet['torzs'])."'
+          )
+        ");
       }
       
       echo json_encode(array("status" => "ok"));
