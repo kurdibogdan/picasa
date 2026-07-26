@@ -32,6 +32,17 @@
           }
           return($ertek);
       }
+      
+      function file_get_contents_from_server($url){
+        $bongeszo_fejlec = [
+          "http" => [
+          "method" => "GET",
+          "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+          ]
+        ];
+        $kontextus = stream_context_create($bongeszo_fejlec);
+        return @file_get_contents($url, false, $kontextus);
+      }
   
   }
 ?>

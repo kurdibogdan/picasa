@@ -4,7 +4,7 @@
   if ($LOCALHOST === true) {
     // Ha helyileg fut, akkor a távoli szerveren regisztrálja be magát a peer.
     // PHP-val hidaljuk át a "same-origin request" hibát.
-    echo file_get_contents("https://kurdi.eu/bogdan/picasa/php/bejelentkezes.php");
+    echo file_get_contents_from_server("https://kurdi.eu/bogdan/picasa/php/bejelentkezes.php");
   }
   else {
     // Ha szerveren fut, akkor a saját adatbázisát használja a kapcsolatok nyilvántartására.

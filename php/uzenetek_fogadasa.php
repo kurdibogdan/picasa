@@ -9,7 +9,7 @@ $sajat_id = get("sajat_id");
 
 if ($LOCALHOST === true) {
     // Ha helyileg fut, akkor a távoli szerverről kéri le az üzeneteket.
-    echo file_get_contents("https://kurdi.eu/bogdan/picasa/php/uzenetek_fogadasa.php?sajat_id=$sajat_id");
+    echo file_get_contents_from_server("https://kurdi.eu/bogdan/picasa/php/uzenetek_fogadasa.php?sajat_id=$sajat_id");
 }
 else {
     // Ha szerveren fut, akkor a szerveren lévő adatbázisból kéri le az üzeneteket.    

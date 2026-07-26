@@ -8,7 +8,8 @@ if ($LOCALHOST === true) {
     $options = [
         'http' => [
             'method'  => 'POST',
-            'header'  => 'Content-type: application/x-www-form-urlencoded',
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n"
+                       . "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
             'content' => json_encode($uzenet),
         ],
     ];
