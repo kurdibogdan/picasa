@@ -114,15 +114,23 @@ const Kapcsolatok = {
   },
   
   kapcsolat_fogadasa: async function(tavoli_id) {
-    // TODO: Ez csak egy vázlatos valami, nem biztos, hogy működik.
     console.log("Kapcsolat fogadása: " + tavoli_id);
+    
+    // Meglévő kapcsolat újrafelhasználása:
+    for (let letrejott_kapcsolat of Kapcsolatok.letrejott_kapcsolatok) {
+      if (letrejott_kapcsolat.id == tavoli_id) {
+        console.log("Kapcsolat már létezik, újrafelhasználás");
+        return(letrejott_kapcsolat);  // Return existing connection
+      }
+    }
+    
+    // Ha még nem volt, akkor új kapcsolat létrehozása:
     var kapcsolat = {};
     kapcsolat.id = tavoli_id;
     Kapcsolatok.peer_beallitasa(kapcsolat);
-    // Nem állítunk be csatornát.
-    // Nem kezdeményezünk összekapcsolódást, mert a másik már megtette.
+    // Nem kell csatorna_beallitasa(), mert a csatornát megkapja 'ondatachannel'-en keresztül.
+    // Nem kell osszekapcsolas(), mert már a kezdeményező fél megcsinálta.
     
-    // TODO: legyen visszajelzés arról, hogy sikerült-e összekapcsolni, és csak akkor vegye fel a létrejött kapcsolatokhoz, ha igen.
     Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
     return(kapcsolat);
   },
