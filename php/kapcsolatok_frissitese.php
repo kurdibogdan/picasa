@@ -2,7 +2,7 @@
 include("kapcsolat.php");
 $sajat_id = get("sajat_id");
 
-if ($LOCALHOST === true) {
+if ($LOCALHOST === true && $SZERVERTESZT == false) {
     // Ha helyileg fut, akkor a távoli szerverrõl kéri le a bejelentkezett felhasználók listáját.
     echo file_get_contents_from_server("https://kurdi.eu/bogdan/picasa/php/kapcsolatok_frissitese.php?sajat_id=$sajat_id");
 }

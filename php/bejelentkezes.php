@@ -1,7 +1,7 @@
 <?php
   include("kapcsolat.php");
 
-  if ($LOCALHOST === true) {
+  if ($LOCALHOST === true && $SZERVERTESZT == false) {
     // Ha helyileg fut, akkor a távoli szerveren regisztrálja be magát a peer.
     // PHP-val hidaljuk át a "same-origin request" hibát.
     echo file_get_contents_from_server("https://kurdi.eu/bogdan/picasa/php/bejelentkezes.php");

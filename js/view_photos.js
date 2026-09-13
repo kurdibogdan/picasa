@@ -1,18 +1,3 @@
-function setupDataChannelHandlers(channel) {
-  channel.onopen = function() {
-      console.log("P2P csatorna megnyílt! Állapot:", channel.readyState);
-      if (channel.startedByUser == true) {
-        openFolder("");
-      }
-  };
-  channel.onclose = () => console.log("P2P csatorna bezárult.");
-  channel.onerror = (err) => console.error("DataChannel hiba:", err);
-  channel.onmessage = async function(event) {        
-      var msg = JSON.parse(event.data);
-      console.log("Üzenet érkezett:", msg.type);
-      await processMessage(msg);
-  };
-}
 
 async function processMessage(msg){
   switch(msg.type) {

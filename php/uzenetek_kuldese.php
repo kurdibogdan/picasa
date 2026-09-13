@@ -1,7 +1,7 @@
 <?php
 include("kapcsolat.php");
 
-if ($LOCALHOST === true) {
+if ($LOCALHOST === true && $SZERVERTESZT == false) {
     // Ha helyileg fut, akkor a távoli szerverre küldi az üzeneteket.
     $uzenet = json_decode(file_get_contents("php://input"), true);
     $url = 'https://kurdi.eu/bogdan/picasa/php/uzenetek_kuldese.php';    

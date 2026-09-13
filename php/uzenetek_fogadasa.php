@@ -7,7 +7,7 @@ include("kapcsolat.php");
 
 $sajat_id = get("sajat_id");
 
-if ($LOCALHOST === true) {
+if ($LOCALHOST === true && $SZERVERTESZT == false) {
     // Ha helyileg fut, akkor a távoli szerverről kéri le az üzeneteket.
     echo file_get_contents_from_server("https://kurdi.eu/bogdan/picasa/php/uzenetek_fogadasa.php?sajat_id=$sajat_id");
 }
