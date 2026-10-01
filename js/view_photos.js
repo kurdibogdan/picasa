@@ -1,5 +1,5 @@
 
-async function processMessage(msg){
+async function processMessage(csatorna, msg){
   switch(msg.type) {
     case "file_list":
       displayFileList(msg.files, msg.path || '');
@@ -10,11 +10,11 @@ async function processMessage(msg){
       break;
     case "get_file":
       console.log("Kliens kéri a fájlt: " + msg.path);
-      fetchAndSendFile(msg.path);
+      fetchAndSendFile(csatorna, msg.path);
       break;
     case "get_folder":
       console.log("Kliens kéri a mappa tartalmát: " + msg.path);
-      await sendLocalFileList(msg.path);
+      await sendLocalFileList(csatorna, msg.path);
       break;
     default:
       console.log("Ismeretlen bejövő üzenettípus: " + msg.type);
@@ -80,21 +80,21 @@ function displayImage(base64Data) {
   document.getElementById("display-image").innerHTML = "<img src='" + base64Data + "'>";
 }
 
-function getFile(file, path) {
+function getFile(csatorna, file, path) {
   let fullPath = path ? path + '/' + file : file;
-  dataChannel.send(JSON.stringify({
+  csatorna.send(JSON.stringify({
     type: 'get_file',
     path: fullPath
   }));
 }
 
 // Egy konkrét kép beolvasása a helyi PHP-től és küldése
-function fetchAndSendFile(path) {
+function fetchAndSendFile(csatorna, path) {
   $.get("php/fajlkezelo.php", {
     "action": "file",
     "path": encodeURIComponent(path)
   }, function(data) {
-    dataChannel.send(JSON.stringify({
+    csatorna.send(JSON.stringify({
       type: 'image_data',
       image: data
     }));
@@ -102,16 +102,16 @@ function fetchAndSendFile(path) {
 }
 
 // Fájllista lekérése a helyi PHP-től és továbbküldése P2P-n
-async function sendLocalFileList(path) {
+async function sendLocalFileList(csatorna, utvonal) {
   $.get("php/fajlkezelo.php", {
     "action": "list",
-    "path": encodeURIComponent(path)
+    "path": encodeURIComponent(utvonal)
   }, 
   function(data) {
     console.log(data);
-    dataChannel.send(JSON.stringify({
+    csatorna.send(JSON.stringify({
       type: "file_list",
-      path: (path || ''),
+      path: (utvonal || ''),
       files: JSON.parse(data)
     }));
   });

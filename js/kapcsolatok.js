@@ -159,7 +159,7 @@ const Kapcsolatok = {
     const RTC_BEALLITASOK = {iceServers: [{ urls: "stun:stun.l.google.com:19302" }]};
     kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK); //  var PC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
     
-    // 1. ICE Candidate kezelés
+    // 1. Bejövő ICE Candidate kezelése
     kapcsolat.pc.onicecandidate = (event) => {
       console.log("ICE Candidate");
       if (event.candidate && kapcsolat.id) {
@@ -173,19 +173,24 @@ const Kapcsolatok = {
         });
       }
     };
-    /// 
-    // 2. A FOGADÓ (Megosztó) oldalon a csatorna fogadása
+    
+    // 2. Bejövő csatorna kezelése:
+    // TODO: Duplakódolás eltüntetése a csatorna_beallitasa()-val.
     kapcsolat.pc.ondatachannel = function(event) {
-      console.log("DataChannel érkezett a távoli féltől!");
-      console.log(event);
-      /// csatorna = event.channel;              // Itt jön létre a változó!
-      /// kapcsolat.csatorna_beallitasa(dataChannel);    // 5. Eseménykezelők beállítása a csatornához
-           /// Pl.:
-           ///  csatorna.onmessage = async function(event) {
-           ///    var msg = JSON.parse(event.data);
-           ///    console.log("Üzenet érkezett:", msg.type);
-           ///    // await processMessage(msg);
-           ///  };
+      console.log("DataChannel érkezett a távoli féltől!");      
+      kapcsolat.csatorna = event.channel;
+      kapcsolat.csatorna.onopen = function() {
+        console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
+        console.log("Csatorna kész az üzenetekre.");
+      };
+      
+      kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
+      kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
+      kapcsolat.csatorna.onmessage = async function(event) {
+        var msg = JSON.parse(event.data);
+        console.log("Üzenet érkezett:", msg.type);
+        await processMessage(kapcsolat.csatorna, msg);
+      };
     };
   
   },
@@ -204,7 +209,7 @@ const Kapcsolatok = {
     kapcsolat.csatorna.onmessage = async function(event) {
         var msg = JSON.parse(event.data);
         console.log("Üzenet érkezett:", msg.type);
-        await processMessage(msg);
+        await processMessage(kapcsolat.csatorna, msg);
     };
   },
   
