@@ -69,13 +69,7 @@ const Kapcsolatok = {
             container.appendChild(div);
           }
           else {
-            let kapcsolodva = false;
-            for (let letrejott_kapcsolat of Kapcsolatok.letrejott_kapcsolatok) {
-              if (peerObj.id == letrejott_kapcsolat.id) {
-                kapcsolodva = true;
-                break;
-              }
-            }
+            let kapcsolodva = !! Kapcsolatok.kapcsolat_keresese(peerObj.id);
             if (kapcsolodva == true) {
               // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
               const div = document.createElement("div");
@@ -110,6 +104,14 @@ const Kapcsolatok = {
       }
       setTimeout(Kapcsolatok.kapcsolatok_periodikus_frissitese, Kapcsolatok.KAPCSOLATOK_FRISSITESI_PERIODUSA);
     });
+  },
+  
+  kapcsolat_keresese: function(tavoli_id) {
+    for (let letrejott_kapcsolat of Kapcsolatok.letrejott_kapcsolatok) {
+      if (tavoli_id == letrejott_kapcsolat.id) {
+        return letrejott_kapcsolat;
+      }
+    }
   },
   
   kapcsolat_kezdemenyezese: async function(tavoli_id) {
@@ -187,9 +189,9 @@ const Kapcsolatok = {
       kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
       kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
       kapcsolat.csatorna.onmessage = async function(event) {
-        var msg = JSON.parse(event.data);
-        console.log("Üzenet érkezett:", msg.type);
-        await processMessage(kapcsolat.csatorna, msg);
+        var uzenet = JSON.parse(event.data);
+        console.log("Üzenet érkezett tőle: " + kapcsolat.id);
+        Uzenetfeldolgozo.uzenet_fogadasa(kapcsolat.id, uzenet);
       };
     };
   
@@ -206,10 +208,9 @@ const Kapcsolatok = {
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
-    kapcsolat.csatorna.onmessage = async function(event) {
-        var msg = JSON.parse(event.data);
-        console.log("Üzenet érkezett:", msg.type);
-        await processMessage(kapcsolat.csatorna, msg);
+    kapcsolat.csatorna.onmessage = function(event) {
+        var uzenet = JSON.parse(event.data);
+        Uzenetfeldolgozo.uzenet_fogadasa(kapcsolat.id, uzenet);
     };
   },
   

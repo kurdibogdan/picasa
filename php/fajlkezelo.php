@@ -19,14 +19,14 @@ include("kapcsolat.php");
 include("fajllista.php");
 include("fajl_letoltese.php");
 
-$parancs = get("action");
-$utvonal = get("path");
+$parancs = get("parancs");
+$utvonal = get("utvonal");
 
 switch($parancs){
-    case "list": // Lista kérése JSON formában
+    case "mappatartalom": // Lista kérése JSON formában
         echo fajllista($utvonal);
         break;
-    case "file": // Egy konkrét kép beolvasása Base64-be a küldéshez
+    case "fajltartalom": // Egy konkrét kép beolvasása Base64-be a küldéshez
         echo fajl_letoltese($utvonal);
         break;
     default:
