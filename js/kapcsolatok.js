@@ -10,16 +10,35 @@ function bejelentkezes(callback) {
 }
 
 // ----------------------------------------------------------- //
-/* Kapcsolat felvétele:
-   1. PHP kilistázza az elérhető peereket.
-   2. Kapcsolatok.kapcsolat_kezdemenyezese(peer_id)
-      3. üzenet küldése PHP szerveren keresztül a peer_id-nak: offer(sdp)
-   4. A másik fél fogadja a PHP szervertől az üzenetet: handleIncomingSignaling().
-      5. válaszol a PHP szerveren keresztül a feladónak: answer(sdp)
+/* WebRTC Peer kapcsolódás sorrendje
    
-   ---
-   Ki küld candidate-et, ki fogadja, mit válaszol?
-   Kell még valamit csinálni, hogy létrejöjjön a kapcsolat?
+   (A) kezdeményez kapcsolatot (B)-vel:
+
+   1. PHP kilistázza az elérhető peereket.
+
+   2. (A) -> kapcsolat_kezdemenyezese(peer_id_B)
+      - készít egy "RTCPeerConnection"-t és beállítja az ICE kandidátust
+      - készít egy "DataChannel"-t a kétirányú kommunikációhoz
+      - készít egy "SDP Offer"-t és beállítja helyi leíróként (LocalDescription)
+      - küld egy "Offer (SDP)"-t (B)-nek a PHP-n keresztül.
+      
+   3. (B) megkapja az üzenetet a "handleIncomingSignaling()" segítségével
+      - készít egy "RTCPeerConnection" és beállítja az ICE kandidátust
+      - elmenti a beérkező "Offer"-t távoli leíróként (RemoteDescription)
+      - készít egy "SDP Answer"-t és beállítja helyi leíróként (LocalDescription)
+      - küld választ (Answer (SDP)) (A)-nak a PHP-n keresztül.
+   
+   4. (A) megkapja a választ (Answer) a "handleIncomingSignaling()" segítségével
+      - beállítja a választ (Answer) távoli leíróként (RemoteDescription)
+   
+   5. Mindkét peer kicseréli az ICE kandidátusait (a kapcsolat felépítése közben folyamatosan):
+      - Amikor az ICE kandidátusokat felfedezik, mindkét peer elküldi azt a PHP szervernek.
+      - Mindkét peer megkapja és hozzárendeli a másik (távoli) ICE kandidátust a kapcsolathoz.
+      - Az ICE kandidátusokon keresztül a peerek megtalálják a legjobb hálózati útvonalat (STUN/TURN).
+   
+   6. Amint a megfelelő ICE kandidátusokat kicserélték, a média-útvonal felépült:
+      - adatkapcsolat nyitva van mindkét oldalon (DataChannel)
+      - a peerek tudnak küldeni / fogadni adatot
 */
 // ----------------------------------------------------------- //
 
@@ -33,8 +52,8 @@ const Kapcsolatok = {
     // Kilistázza az elérhető kapcsolatokat (de még nem kapcsolta össze őket).
     // A listát periodikusan frissíti.
     $.get("php/kapcsolatok_frissitese.php", {sajat_id: sajat_id}, function(data) {
-      if (data.length > 0) console.log(data);  // DEBUG
       if (data != Kapcsolatok.elozo_kapcsolatok) {
+        if (data.length > 0) console.log(data);  // DEBUG
          
         // elérhető kapcsolatok kilistázása (kivéve a saját ID-t):
         Kapcsolatok.elozo_kapcsolatok = data;
@@ -158,8 +177,15 @@ const Kapcsolatok = {
     // 2. A FOGADÓ (Megosztó) oldalon a csatorna fogadása
     kapcsolat.pc.ondatachannel = function(event) {
       console.log("DataChannel érkezett a távoli féltől!");
-    ///   dataChannel = event.channel;              // Itt jön létre a változó!
-    ///   kapcsolat.csatorna_beallitasa(dataChannel);    // 5. Eseménykezelők beállítása a csatornához
+      console.log(event);
+      /// csatorna = event.channel;              // Itt jön létre a változó!
+      /// kapcsolat.csatorna_beallitasa(dataChannel);    // 5. Eseménykezelők beállítása a csatornához
+           /// Pl.:
+           ///  csatorna.onmessage = async function(event) {
+           ///    var msg = JSON.parse(event.data);
+           ///    console.log("Üzenet érkezett:", msg.type);
+           ///    // await processMessage(msg);
+           ///  };
     };
   
   },
@@ -170,7 +196,7 @@ const Kapcsolatok = {
     kapcsolat.csatorna.onopen = function() {
       console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
       if (kapcsolat.csatorna.felhasznalo_kezdemenyezte == true) {
-        openFolder("");
+        openFolder(kapcsolat.csatorna, "./");
       }
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");

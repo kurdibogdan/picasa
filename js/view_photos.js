@@ -22,8 +22,8 @@ async function processMessage(msg){
   }
 }
 
-function openFolder(path) {
-  dataChannel.send(JSON.stringify({
+function openFolder(csatorna, path) {
+  csatorna.send(JSON.stringify({
     type: 'get_folder',
     path: path
   }));
