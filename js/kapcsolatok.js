@@ -191,7 +191,7 @@ const Kapcsolatok = {
       kapcsolat.csatorna.onmessage = async function(event) {
         var uzenet = JSON.parse(event.data);
         console.log("Üzenet érkezett tőle: " + kapcsolat.id);
-        Uzenetfeldolgozo.uzenet_fogadasa(kapcsolat.id, uzenet);
+        Fajlkezelo.uzenet_fogadasa(kapcsolat.id, uzenet);
       };
     };
   
@@ -203,14 +203,14 @@ const Kapcsolatok = {
     kapcsolat.csatorna.onopen = function() {
       console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
       if (kapcsolat.csatorna.felhasznalo_kezdemenyezte == true) {
-        openFolder(kapcsolat.csatorna, "./");
+        Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
       }
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
     kapcsolat.csatorna.onmessage = function(event) {
         var uzenet = JSON.parse(event.data);
-        Uzenetfeldolgozo.uzenet_fogadasa(kapcsolat.id, uzenet);
+        Fajlkezelo.uzenet_fogadasa(kapcsolat.id, uzenet);
     };
   },
   

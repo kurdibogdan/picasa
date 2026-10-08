@@ -1,6 +1,5 @@
 <!--
   TODO: 
-  - Mappatartalom megjelenítésénél a kilistázott objektujmok (mappák, fájlok) akciói a távoli ID-ra hivatkozzanak!
   - felhasználónév URL-ből / bejelentkezésből (de mindig új ID-t kap a tiszta kapcsolatokért)
     > felhasználó nevéhez ikonokat jelenítsen meg programok indítására:
       -> fájlböngésző
@@ -29,7 +28,7 @@
   <script type="text/javascript" src="js/jquery.1.12.4.min.js"></script>
   <script type="text/javascript" src="js/webrtc.js"></script>
   <script type="text/javascript" src="js/kapcsolatok.js"></script>
-  <script type="text/javascript" src="js/view_photos.js"></script>
+  <script type="text/javascript" src="js/fajlkezelo.js"></script>
   <link rel="stylesheet" type="text/css" href="stiluslap.css">
   <style type="text/css">
   </style>
@@ -46,7 +45,7 @@
  <h3>Megosztott fényképek:</h3>
  <!-- Ide érkeznek majd a képek a P2P csatornán keresztül -->
  <div id="file-list"></div>
- <div id="display-image"></div>
+ <div id="kep_megjelenitese"></div>
 </div>
 
 <script type="text/javascript">

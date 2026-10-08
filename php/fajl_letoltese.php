@@ -15,6 +15,7 @@ function fajl_letoltese($utvonal) {
     $darabok = explode('/', $utvonal);
     foreach ($darabok as $darab) {
         if ($darab === '..' || $darab === '.') {
+            echo "Tiltott útvonal: $darab\n";
             return false;
         }
     }
@@ -31,7 +32,7 @@ function fajl_letoltese($utvonal) {
     
     if (file_exists($teljes_utvonal)) {
         $data = file_get_contents($teljes_utvonal);
-        $type = pathinfo($teljes_utvonal, PATHINFO_EXTENSION);   
+        $type = pathinfo($teljes_utvonal, PATHINFO_EXTENSION);
         return 'data:image/' . $type . ';base64,' . base64_encode($data);
     }
     
