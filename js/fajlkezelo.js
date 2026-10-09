@@ -78,7 +78,9 @@ const Fajlkezelo = {
            + " <div class='nev'>" + item.nev + "</div>"
            + " <div class='datum'>" + item.datum + "</div>"
            + "</div>";
-      } else {
+      }
+      // Fájlok kilistázása:
+      else {
         t += "<div class='keret'>"
            + " <div class='kiskep' "
            + "      style=\"background-image: url('" + item.kiskep + "');\""  // "&#128247;
@@ -97,14 +99,14 @@ const Fajlkezelo = {
     document.getElementById("file-list").innerHTML = t;
   },
   
-  fajl_letoltese: function(tavoli_id, file, path) {
+  fajl_letoltese: function(tavoli_id, fajl, mappa) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
     let csatorna = kapcsolat.csatorna;
-    let fullPath = (path || "") + file;
-    console.log("fajl_letoltese(): Full path: " + fullPath);
+    let utvonal = (mappa ? mappa + "/" : "") + fajl;
+    console.log("fajl_letoltese: " + utvonal);
     csatorna.send(JSON.stringify({
       tipus: "fajl_letoltese",
-      utvonal: fullPath
+      utvonal: utvonal
     }));
   },
   

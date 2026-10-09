@@ -73,7 +73,7 @@ const Kapcsolatok = {
             if (kapcsolodva == true) {
               // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
               const div = document.createElement("div");
-              div.innerText = "Csatlakozva: " + peerObj.id;              
+              div.innerText = "Csatlakozva: " + peerObj.id;
               container.appendChild(div);
             }
             else {
@@ -81,7 +81,7 @@ const Kapcsolatok = {
               const div = document.createElement("div");
               div.className = "peer-item";
               div.innerText = "Csatlakozás: " + peerObj.id;
-              div.onclick = function(){Kapcsolatok.kapcsolat_kezdemenyezese(peerObj.id);}; // webrtc.js
+              div.onclick = function(){Kapcsolatok.kapcsolat_kezdemenyezese(peerObj.id);};
               container.appendChild(div);
             }
           }
@@ -126,7 +126,7 @@ const Kapcsolatok = {
     var kapcsolat = {};
     kapcsolat.id = tavoli_id;
     Kapcsolatok.peer_beallitasa(kapcsolat);
-    Kapcsolatok.csatorna_beallitasa(kapcsolat);
+    Kapcsolatok.csatorna_keszitese(kapcsolat);
     Kapcsolatok.osszekapcsolas(kapcsolat);
     
     // TODO: legyen visszajelzés arról, hogy sikerült-e összekapcsolni, és csak akkor vegye fel a létrejött kapcsolatokhoz, ha igen.
@@ -149,7 +149,7 @@ const Kapcsolatok = {
     var kapcsolat = {};
     kapcsolat.id = tavoli_id;
     Kapcsolatok.peer_beallitasa(kapcsolat);
-    // Nem kell csatorna_beallitasa(), mert a csatornát megkapja 'ondatachannel'-en keresztül.
+    // Nem kell csatorna_keszitese(), mert a csatornát megkapja 'ondatachannel'-en keresztül.
     // Nem kell osszekapcsolas(), mert már a kezdeményező fél megcsinálta.
     
     Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
@@ -177,34 +177,27 @@ const Kapcsolatok = {
     };
     
     // 2. Bejövő csatorna kezelése:
-    // TODO: Duplakódolás eltüntetése a csatorna_beallitasa()-val.
     kapcsolat.pc.ondatachannel = function(event) {
-      console.log("DataChannel érkezett a távoli féltől!");      
-      kapcsolat.csatorna = event.channel;
-      kapcsolat.csatorna.onopen = function() {
-        console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
-        console.log("Csatorna kész az üzenetekre.");
-      };
-      
-      kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
-      kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
-      kapcsolat.csatorna.onmessage = async function(event) {
-        var uzenet = JSON.parse(event.data);
-        console.log("Üzenet érkezett tőle: " + kapcsolat.id);
-        Fajlkezelo.uzenet_fogadasa(kapcsolat.id, uzenet);
-      };
+      if (!kapcsolat.csatorna) {
+        console.log("DataChannel érkezett a távoli féltől!");
+        kapcsolat.csatorna = event.channel;
+        Kapcsolatok.csatorna_beallitasa(kapcsolat);
+      }
     };
   
   },
   
-  csatorna_beallitasa: function(kapcsolat) {
+  csatorna_keszitese: function(kapcsolat) {
     kapcsolat.csatorna = kapcsolat.pc.createDataChannel("photos");
-    kapcsolat.csatorna.felhasznalo_kezdemenyezte = true;
+    Kapcsolatok.csatorna_beallitasa(kapcsolat, function(){
+      Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
+    });
+  },
+  
+  csatorna_beallitasa: function(kapcsolat, callback) {
     kapcsolat.csatorna.onopen = function() {
       console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
-      if (kapcsolat.csatorna.felhasznalo_kezdemenyezte == true) {
-        Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
-      }
+      if (typeof callback == "function") callback();
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
