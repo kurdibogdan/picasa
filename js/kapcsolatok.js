@@ -158,7 +158,18 @@ const Kapcsolatok = {
   
   peer_beallitasa: function(kapcsolat){
   // bejovo_kapcsolat_felvetele:
-    const RTC_BEALLITASOK = {iceServers: [{ urls: "stun:stun.l.google.com:19302" }]};
+    // const RTC_BEALLITASOK = {iceServers: [{ urls: "stun:stun.l.google.com:19302" }]};
+    const RTC_BEALLITASOK = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { 
+          urls: "turn:numb.viagenie.ca",
+          username: "webrtchaxx@gmail.com",
+          credential: "webrtchaxx"
+        }
+      ]
+    };
+    
     kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK); //  var PC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
     
     // 1. Bejövő ICE Candidate kezelése
