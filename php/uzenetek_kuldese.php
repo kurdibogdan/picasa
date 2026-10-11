@@ -4,7 +4,6 @@ include("kapcsolat.php");
 if ($LOCALHOST === true && $SZERVERTESZT == false) {
     // Ha helyileg fut, akkor a távoli szerverre küldi az üzeneteket.
     $uzenet = json_decode(file_get_contents("php://input"), true);
-    $url = 'https://kurdi.eu/bogdan/picasa/php/uzenetek_kuldese.php';    
     $options = [
         'http' => [
             'method'  => 'POST',
@@ -13,9 +12,10 @@ if ($LOCALHOST === true && $SZERVERTESZT == false) {
             'content' => json_encode($uzenet),
         ],
     ];
-    $context  = stream_context_create($options);
-    $response = file_get_contents($url, false, $context);
-    echo $response;
+    // $url = 'https://kurdi.eu/bogdan/picasa/php/uzenetek_kuldese.php';    
+    // $context  = stream_context_create($options);
+    // $response = file_get_contents($url, false, $context);
+    // echo $response;
 }
 else {
     // Ha távoli szerveren fut, akkor a távoli adatbázisba mentjük az üzenetet.
@@ -34,8 +34,8 @@ else {
         ");
       }
       
-      echo json_encode(array("status" => "ok"));
-      exit;
+      // echo json_encode(array("status" => "ok"));
+      // exit;
     }
 }
 ?>

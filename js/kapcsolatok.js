@@ -171,7 +171,7 @@ const Kapcsolatok = {
           kuldo_id: sajat_id,
           torzs: {type: "candidate", candidate: event.candidate}
         }), function(data){
-          console.log(data);
+          if (data != "") console.log(data);
         });
       }
     };
@@ -217,7 +217,7 @@ const Kapcsolatok = {
         kuldo_id: sajat_id,
         torzs: {type: "offer", sdp: offer}
         }), function(data){
-          console.log(data);
+          if (data != "") console.log(data);
       });
       
     }

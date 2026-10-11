@@ -17,7 +17,7 @@ async function handleIncomingSignaling(kuldo_id, torzs) {
         kuldo_id: sajat_id,
         torzs: { type: "answer", sdp: answer }
       }), function(data){
-        console.log(data);
+        if (data != "") console.log(data);
       });
       
       // Várakozó jelöltek feldolgozása:
@@ -82,7 +82,7 @@ async function handleIncomingSignaling(kuldo_id, torzs) {
     senderId: senderId,
     payload: data // Itt megy majd az SDP vagy ICE candidate
   }), function(data){
-    console.log(data);
+    if (data != "") console.log(data);
   });
   }
 */
