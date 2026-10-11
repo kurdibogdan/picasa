@@ -12,10 +12,10 @@ if ($LOCALHOST === true && $SZERVERTESZT == false) {
             'content' => json_encode($uzenet),
         ],
     ];
-    // $url = 'https://kurdi.eu/bogdan/picasa/php/uzenetek_kuldese.php';    
-    // $context  = stream_context_create($options);
-    // $response = file_get_contents($url, false, $context);
-    // echo $response;
+    $url = 'https://kurdi.eu/bogdan/picasa/php/uzenetek_kuldese.php';    
+    $context  = stream_context_create($options);
+    /* $response = */ file_get_contents($url, false, $context);
+    /* echo $response; */
 }
 else {
     // Ha távoli szerveren fut, akkor a távoli adatbázisba mentjük az üzenetet.

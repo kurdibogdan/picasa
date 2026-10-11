@@ -157,28 +157,25 @@ const Kapcsolatok = {
   },
   
   peer_beallitasa: function(kapcsolat){
-  // bejovo_kapcsolat_felvetele:
     const RTC_BEALLITASOK = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        {
-          urls: ["turn:turnserver.online"],
-          username: "",
-          credential: ""
-        }
+     // { urls: "stun:stun1.l.google.com:19302" },
+     // {
+     //   urls: ["turn:turnserver.online"],
+     //   username: "",
+     //   credential: ""
+     // }
       ]
     };
+    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK); //  var PC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
     
-    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK);
-    
-    // Connection state monitoring
     kapcsolat.pc.oniceconnectionstatechange = () => {
-      console.log("🔵 ICE Connection State:", kapcsolat.pc.iceConnectionState);
+      console.log("🔵 ICE kapcsolat állapota:", kapcsolat.pc.iceConnectionState);
     };
     
     kapcsolat.pc.onconnectionstatechange = () => {
-      console.log("🟢 Connection State:", kapcsolat.pc.connectionState);
+      console.log("🟢 kapcsolat állapota:", kapcsolat.pc.connectionState);
     };
     
     // 1. Bejövő ICE Candidate kezelése
