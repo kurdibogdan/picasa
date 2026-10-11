@@ -74,6 +74,7 @@ const Kapcsolatok = {
               // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
               const div = document.createElement("div");
               div.innerText = "Csatlakozva: " + peerObj.id;
+              div.onclick = function(){Fajlkezelo.mappa_megnyitasa(peerObj.id, "");}
               container.appendChild(div);
             }
             else {
