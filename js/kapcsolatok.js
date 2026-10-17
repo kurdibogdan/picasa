@@ -99,12 +99,26 @@ const Kapcsolatok = {
 
         // determine state
         let state = 'available';
-        if (peerObj.id == sajat_id) state = 'own';
-        else {
-          let kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
-          if (!kapcsolat) state = 'available';
-          else if (kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') state = 'connected';
-          else state = (kapcsolat.state === 'connecting' || kapcsolat.pc && kapcsolat.pc.connectionState === 'connecting') ? 'connecting' : 'available';
+        if (peerObj.id == sajat_id) {
+          state = 'own';
+        } else {
+          const kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
+          if (!kapcsolat) {
+            state = 'available';
+          } else if (kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
+            state = 'connected';
+          } else if (
+              kapcsolat.state === 'connecting' ||
+              (kapcsolat.pc && (
+                kapcsolat.pc.connectionState === 'connecting' ||
+                kapcsolat.pc.iceConnectionState === 'checking' ||
+                kapcsolat.pc.iceConnectionState === 'new'
+              ))
+          ) {
+            state = 'connecting';
+          } else {
+            state = 'available';
+          }
         }
 
         status.classList.add('status-' + state);
@@ -117,7 +131,10 @@ const Kapcsolatok = {
         btn.appendChild(status);
         btn.appendChild(idSpan);
 
-        if (Kapcsolatok.selectedPeer[side] == peerObj.id) btn.classList.add('selected');
+        if (Kapcsolatok.selectedPeer[side] == peerObj.id) {
+          btn.classList.add('selected');
+        }
+
         btn.onclick = function() {
           Kapcsolatok.selectPeer(side, peerObj.id);
         };
@@ -131,41 +148,36 @@ const Kapcsolatok = {
   
   selectPeer: function(side, id) {
     Kapcsolatok.selectedPeer[side] = id;
-    // frissítjük a megjelenítést
-    try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
 
-    // Clear current pane file list while we request new one
-    const containerId = (side === 'left') ? 'file-list-left' : 'file-list-right';
-    document.getElementById(containerId).innerHTML = '<div class="keret">Kérés küldése...</div>';
+    try {
+      Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok));
+    } catch (e) {}
+
+    const paneId = (side === 'left') ? 'file-list-left' : 'file-list-right';
+    const paneContainer = document.getElementById(paneId);
+    if (paneContainer) {
+      paneContainer.innerHTML = '<div class="keret">Kérés küldése...</div>';
+    }
 
     if (id == sajat_id) {
       // saját fájlok megjelenítése azon a panelen
       Fajlkezelo.mappatartalom_lekerdez_local('', side);
-    } else {
-      // ha van már kapcsolat és nyitott a csatorna, kérjük le rögtön a listát
-      let kapcsolat = Kapcsolatok.kapcsolat_keresese(id);
-      if (kapcsolat && kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
-        Fajlkezelo.mappa_megnyitasa(id, '');
-      } else {
-        // ha nincs kapcsolat, kezdeményezzük. onopen fogja kérni a listát.
-        // create or reuse a kapcsolat object and mark as connecting
-        if (!kapcsolat) {
-          kapcsolat = { id: id, state: 'connecting' };
-          Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
-          Kapcsolatok.peer_beallitasa(kapcsolat);
-          Kapcsolatok.csatorna_keszitese(kapcsolat);
-          Kapcsolatok.osszekapcsolas(kapcsolat);
-        } else {
-          kapcsolat.state = 'connecting';
-          // if pc exists, try to create offer again
-          if (kapcsolat.pc && kapcsolat.pc.connectionState !== 'connected') {
-            Kapcsolatok.osszekapcsolas(kapcsolat);
-          }
-        }
-        // re-render to show connecting state
-        try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
-      }
+      return;
     }
+
+    let kapcsolat = Kapcsolatok.kapcsolat_keresese(id);
+
+    if (kapcsolat && kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
+      Fajlkezelo.mappa_megnyitasa(id, '');
+      return;
+    }
+
+    if (!kapcsolat) {
+      Kapcsolatok.kapcsolat_kezdemenyezese(id);
+      return;
+    }
+
+    Kapcsolatok.osszekapcsolas(kapcsolat);
   },
   
   kapcsolat_keresese: function(tavoli_id) {
@@ -239,16 +251,24 @@ const Kapcsolatok = {
         kapcsolat.state = 'connected';
       } else if (kapcsolat.pc.iceConnectionState === 'checking' || kapcsolat.pc.iceConnectionState === 'new') {
         kapcsolat.state = 'connecting';
+      } else if (kapcsolat.pc.iceConnectionState === 'disconnected' || kapcsolat.pc.iceConnectionState === 'failed' || kapcsolat.pc.iceConnectionState === 'closed') {
+        kapcsolat.state = 'available';
       }
-      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
+
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch (e) {}
     };
-    
+
     kapcsolat.pc.onconnectionstatechange = () => {
-      console.log("🟢 kapcsolat állapota:", kapcsolat.pc.connectionState);
-      if (kapcsolat.pc.connectionState === 'connected') kapcsolat.state = 'connected';
-      else if (kapcsolat.pc.connectionState === 'connecting') kapcsolat.state = 'connecting';
-      else if (kapcsolat.pc.connectionState === 'disconnected' || kapcsolat.pc.connectionState === 'failed' || kapcsolat.pc.connectionState === 'closed') kapcsolat.state = 'available';
-      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
+      console.log("kapcsolat állapota:", kapcsolat.pc.connectionState);
+      if (kapcsolat.pc.connectionState === 'connected') {
+        kapcsolat.state = 'connected';
+      } else if (kapcsolat.pc.connectionState === 'connecting') {
+        kapcsolat.state = 'connecting';
+      } else if (kapcsolat.pc.connectionState === 'disconnected' || kapcsolat.pc.connectionState === 'failed' || kapcsolat.pc.connectionState === 'closed') {
+        kapcsolat.state = 'available';
+      }
+
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch (e) {}
     };
     
     // 1. Bejövő ICE Candidate kezelése
@@ -296,13 +316,8 @@ const Kapcsolatok = {
       try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
       if (typeof callback == "function") callback();
 
-      // Ha ez a peer ki van választva valamelyik panelen, kérjük le automatikusan a listát
-      try {
-        if (Kapcsolatok.selectedPeer.left == kapcsolat.id || Kapcsolatok.selectedPeer.right == kapcsolat.id) {
-          Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
-        }
-      } catch (e) {
-        console.warn("Hiba a onopen utáni mappalista kérésnél:", e);
+      if (Kapcsolatok.selectedPeer.left == kapcsolat.id || Kapcsolatok.selectedPeer.right == kapcsolat.id) {
+        Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
       }
     };
     kapcsolat.csatorna.onclose = () => {

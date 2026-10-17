@@ -22,24 +22,56 @@
       min-height: 360px;
       background: #fafafa;
     }
-    .peer-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .peer-button {
-      text-align: left;
-      padding: 6px 8px;
-      border: 1px solid #c8c8c8;
-      background: #fff;
-      cursor: pointer;
-    }
-    .peer-button.selected {
-      background: #edf4ff;
-      border-color: #7aa6ff;
-      font-weight: bold;
-    }
+
+  .peer-list {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .peer-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1;
+  }
+
+  .peer-button.selected {
+    background: #eef5ff;
+    border-color: #7aa6ff;
+    font-weight: 600;
+  }
+
+  .status-circle {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 1px solid #666;
+    vertical-align: middle;
+  }
+
+  .status-own { background: #000; border-color: #000; }
+  .status-available { background: #fff; border-color: #999; }
+  .status-connecting { background: #2b8cff; border-color: #2b8cff; }
+  .status-connected { background: #29c93b; border-color: #29c93b; }
+
+  .peer-id {
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+
     .nagykeret {
       display: block;
     }
@@ -67,10 +99,11 @@
       min-width: 0;
     }
     .datum {
-      color: #666;
+      color: #777;
       font-size: 12px;
     }
-  </style>
+
+</style>
  </head>
 <body>
 

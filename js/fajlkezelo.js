@@ -109,7 +109,8 @@ const Fajlkezelo = {
          + " <div class='datum'>&nbsp;</div>"
          + "</div>";
     }
-
+    
+    // Mappák kilistázása:
     for (let i = 0; i < fajlok.length; i++) {
       let item = fajlok[i];
       if (item.tipus == "mappa") {
@@ -122,6 +123,7 @@ const Fajlkezelo = {
            + " <div class='datum'>" + item.datum + "</div>"
            + "</div>";
       }
+      // Fájlok kilistázása:
       else {
         // Direkt letöltés a szerverről
         let downloadUrl = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent((utvonal ? utvonal + '/' : '') + item.nev + (item.tipus ? '.' + item.tipus : ''));
@@ -143,8 +145,12 @@ const Fajlkezelo = {
     // Eldöntjük, melyik oldalon jelenítsük meg ezt a távoli peer-t: ahol éppen ki van választva
     let side = null;
     if (typeof Kapcsolatok !== 'undefined' && Kapcsolatok.selectedPeer) {
-      if (Kapcsolatok.selectedPeer.left == tavoli_id) side = 'left';
-      else if (Kapcsolatok.selectedPeer.right == tavoli_id) side = 'right';
+      if (Kapcsolatok.selectedPeer.left === tavoli_id) {
+        side = 'left';
+      }
+      else if (Kapcsolatok.selectedPeer.right === tavoli_id) {
+        side = 'right';
+      }
     }
     // Ha nincs ilyen oldal (például ha a felhasználó közben váltott), akkor jobb oldalra mutatjuk
     if (!side) side = 'right';
