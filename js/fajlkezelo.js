@@ -135,7 +135,8 @@ const Fajlkezelo = {
     let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
 
     let t = "<div class='nagykeret'>";
-
+    
+    // Ha nem a gyökérben vagyunk, mutassunk "vissza" gombot
     if (utvonal) {
       let parentPath = utvonal.split('/').filter(Boolean);
       parentPath.pop();
@@ -162,10 +163,13 @@ const Fajlkezelo = {
            + " <div class='datum'>" + item.datum + "</div>"
            + "</div>";
       }
+      // Fájlok kilistázása:
       else {
         let downloadUrl = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent((utvonal ? utvonal + '/' : '') + item.nev + (item.tipus ? '.' + item.tipus : ''));
         t += "<div class='keret'>"
-           + " <div class='kiskep' style=\"background-image: url('" + item.kiskep + "');\" onclick=\"window.open('" + downloadUrl + "','_blank')\">"
+           + " <div class='kiskep' "
+           + "      style=\"background-image: url('" + item.kiskep + "');\""  // "&#128247;
+           + "      onclick=\"window.open('" + downloadUrl + "','_blank')\">"
            + " </div>"
            + " <div class='nev'>" + item.nev + "</div>"
            + " <div class='datum'>" + item.datum + "</div>"
@@ -248,7 +252,7 @@ const Fajlkezelo = {
       utvonal: utvonal
     }));
   },
-
+  
   // Egy konkrét kép beolvasása a helyi PHP-től és küldése
   fajltartalom_elkuldese: async function(tavoli_id, utvonal) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);

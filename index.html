@@ -29,70 +29,8 @@
   <script type="text/javascript" src="js/kapcsolatok.js"></script>
   <script type="text/javascript" src="js/fajlkezelo.js"></script>
   <link rel="stylesheet" type="text/css" href="stiluslap.css">
+  <link rel="stylesheet" type="text/css" href="commander.css">
   <style type="text/css">
-    #commander {
-      display: flex;
-      gap: 16px;
-      margin-top: 16px;
-    }
-    .pane {
-      flex: 1 1 50%;
-      border: 1px solid #d0d0d0;
-      padding: 12px;
-      box-sizing: border-box;
-      min-height: 360px;
-      background: #fafafa;
-    }
-
-  .peer-list {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .peer-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border: 1px solid #d8d8d8;
-    border-radius: 6px;
-    background: #fff;
-    cursor: pointer;
-    user-select: none;
-    line-height: 1;
-  }
-
-  .peer-button.selected {
-    background: #eef5ff;
-    border-color: #7aa6ff;
-    font-weight: 600;
-  }
-
-  .status-circle {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    box-sizing: border-box;
-    border: 1px solid #666;
-    vertical-align: middle;
-  }
-
-  .status-own { background: #000; border-color: #000; }
-  .status-available { background: #fff; border-color: #999; }
-  .status-connecting { background: #2b8cff; border-color: #2b8cff; }
-  .status-connected { background: #29c93b; border-color: #29c93b; }
-
-  .peer-id {
-    font-family: monospace;
-    font-size: 13px;
-  }
-
-
     .nagykeret {
       display: block;
     }
@@ -123,24 +61,17 @@
       color: #777;
       font-size: 12px;
     }
-
-
   </style>
  </head>
 <body>
 
-<h1>Saját azonosító: <span id="sajat_id">...</span></h1>
-<div>
- <h3>Elérhető kapcsolatok:</h3>
- <div id="peer-list-container" class="peer-list">Frissítés...</div>
-</div>
-<hr>
+<!-- Ide érkeznek majd a képek a P2P csatornán keresztül -- >
 <div id="photo-container">
  <h3>Megosztott fényképek:</h3>
- <!-- Ide érkeznek majd a képek a P2P csatornán keresztül -->
  <div id="file-list"></div>
  <div id="kep_megjelenitese"></div>
 </div>
+-->
 
 <div id="commander">
   <div class="pane" id="pane-left">
@@ -158,7 +89,6 @@
 
 <script type="text/javascript">
 bejelentkezes(function(){
-  $("#sajat_id").text(sajat_id);
   Kapcsolatok.selectedPeer = {
     left: sajat_id,
     right: sajat_id

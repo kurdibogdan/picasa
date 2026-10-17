@@ -100,12 +100,14 @@ const Kapcsolatok = {
         // determine state
         let state = 'available';
         if (peerObj.id == sajat_id) {
+          // Saját ID:
           state = 'own';
         } else {
           const kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
           if (!kapcsolat) {
             state = 'available';
           } else if (kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
+            // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
             state = 'connected';
           } else if (
               kapcsolat.state === 'connecting' ||
@@ -135,6 +137,8 @@ const Kapcsolatok = {
           btn.classList.add('selected');
         }
 
+       
+        // Kapcsolódás kattintásra:
         btn.onclick = function() {
           Kapcsolatok.selectPeer(side, peerObj.id);
         };
@@ -259,7 +263,7 @@ const Kapcsolatok = {
     };
 
     kapcsolat.pc.onconnectionstatechange = () => {
-      console.log("kapcsolat állapota:", kapcsolat.pc.connectionState);
+      console.log("🟢 kapcsolat állapota:", kapcsolat.pc.connectionState);
       if (kapcsolat.pc.connectionState === 'connected') {
         kapcsolat.state = 'connected';
       } else if (kapcsolat.pc.connectionState === 'connecting') {
