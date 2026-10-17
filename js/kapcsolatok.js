@@ -93,13 +93,30 @@ const Kapcsolatok = {
       function makeButton(side) {
         const btn = document.createElement('div');
         btn.className = 'peer-button';
-        let label = (peerObj.id == sajat_id) ? 'Saját ID: ' + peerObj.id : peerObj.id;
-        // ha kapcsolat létezik és a csatorna nyitva, jelöljük
-        let kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
-        if (kapcsolat && kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
-          label += ' (csatlakozva)';
+        // státusz kör
+        const status = document.createElement('span');
+        status.className = 'status-circle';
+
+        // determine state
+        let state = 'available';
+        if (peerObj.id == sajat_id) state = 'own';
+        else {
+          let kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
+          if (!kapcsolat) state = 'available';
+          else if (kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') state = 'connected';
+          else state = (kapcsolat.state === 'connecting' || kapcsolat.pc && kapcsolat.pc.connectionState === 'connecting') ? 'connecting' : 'available';
         }
-        btn.innerText = label;
+
+        status.classList.add('status-' + state);
+
+        // only show ID text
+        const idSpan = document.createElement('span');
+        idSpan.className = 'peer-id';
+        idSpan.innerText = peerObj.id;
+
+        btn.appendChild(status);
+        btn.appendChild(idSpan);
+
         if (Kapcsolatok.selectedPeer[side] == peerObj.id) btn.classList.add('selected');
         btn.onclick = function() {
           Kapcsolatok.selectPeer(side, peerObj.id);
@@ -117,6 +134,10 @@ const Kapcsolatok = {
     // frissítjük a megjelenítést
     try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
 
+    // Clear current pane file list while we request new one
+    const containerId = (side === 'left') ? 'file-list-left' : 'file-list-right';
+    document.getElementById(containerId).innerHTML = '<div class="keret">Kérés küldése...</div>';
+
     if (id == sajat_id) {
       // saját fájlok megjelenítése azon a panelen
       Fajlkezelo.mappatartalom_lekerdez_local('', side);
@@ -127,7 +148,22 @@ const Kapcsolatok = {
         Fajlkezelo.mappa_megnyitasa(id, '');
       } else {
         // ha nincs kapcsolat, kezdeményezzük. onopen fogja kérni a listát.
-        Kapcsolatok.kapcsolat_kezdemenyezese(id);
+        // create or reuse a kapcsolat object and mark as connecting
+        if (!kapcsolat) {
+          kapcsolat = { id: id, state: 'connecting' };
+          Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
+          Kapcsolatok.peer_beallitasa(kapcsolat);
+          Kapcsolatok.csatorna_keszitese(kapcsolat);
+          Kapcsolatok.osszekapcsolas(kapcsolat);
+        } else {
+          kapcsolat.state = 'connecting';
+          // if pc exists, try to create offer again
+          if (kapcsolat.pc && kapcsolat.pc.connectionState !== 'connected') {
+            Kapcsolatok.osszekapcsolas(kapcsolat);
+          }
+        }
+        // re-render to show connecting state
+        try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
       }
     }
   },
@@ -151,12 +187,15 @@ const Kapcsolatok = {
     console.log("Kapcsolódás kezdeményezése: " + tavoli_id);
     var kapcsolat = {};
     kapcsolat.id = tavoli_id;
+    kapcsolat.state = 'connecting';
     Kapcsolatok.peer_beallitasa(kapcsolat);
     Kapcsolatok.csatorna_keszitese(kapcsolat);
     Kapcsolatok.osszekapcsolas(kapcsolat);
     
     // TODO: legyen visszajelzés arról, hogy sikerült-e összekapcsolni, és csak akkor vegye fel a létrejött kapcsolatokhoz, ha igen.
     Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
+    // update UI
+    try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
     return(kapcsolat);
   },
   
@@ -174,11 +213,14 @@ const Kapcsolatok = {
     // Ha még nem volt, akkor új kapcsolat létrehozása:
     var kapcsolat = {};
     kapcsolat.id = tavoli_id;
+    kapcsolat.state = 'connecting';
     Kapcsolatok.peer_beallitasa(kapcsolat);
     // Nem kell csatorna_keszitese(), mert a csatornát megkapja 'ondatachannel'-en keresztül.
     // Nem kell osszekapcsolas(), mert már a kezdeményező fél megcsinálta.
     
     Kapcsolatok.letrejott_kapcsolatok.push(kapcsolat);
+    // update UI
+    try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
     return(kapcsolat);
   },
   
@@ -192,10 +234,21 @@ const Kapcsolatok = {
     
     kapcsolat.pc.oniceconnectionstatechange = () => {
       console.log("🔵 ICE kapcsolat állapota:", kapcsolat.pc.iceConnectionState);
+      // update state/UI
+      if (kapcsolat.pc.iceConnectionState === 'connected' || kapcsolat.pc.iceConnectionState === 'completed') {
+        kapcsolat.state = 'connected';
+      } else if (kapcsolat.pc.iceConnectionState === 'checking' || kapcsolat.pc.iceConnectionState === 'new') {
+        kapcsolat.state = 'connecting';
+      }
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
     };
     
     kapcsolat.pc.onconnectionstatechange = () => {
       console.log("🟢 kapcsolat állapota:", kapcsolat.pc.connectionState);
+      if (kapcsolat.pc.connectionState === 'connected') kapcsolat.state = 'connected';
+      else if (kapcsolat.pc.connectionState === 'connecting') kapcsolat.state = 'connecting';
+      else if (kapcsolat.pc.connectionState === 'disconnected' || kapcsolat.pc.connectionState === 'failed' || kapcsolat.pc.connectionState === 'closed') kapcsolat.state = 'available';
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
     };
     
     // 1. Bejövő ICE Candidate kezelése
@@ -239,6 +292,8 @@ const Kapcsolatok = {
   csatorna_beallitasa: function(kapcsolat, callback) {
     kapcsolat.csatorna.onopen = function() {
       console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
+      kapcsolat.state = 'connected';
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
       if (typeof callback == "function") callback();
 
       // Ha ez a peer ki van választva valamelyik panelen, kérjük le automatikusan a listát
@@ -250,7 +305,11 @@ const Kapcsolatok = {
         console.warn("Hiba a onopen utáni mappalista kérésnél:", e);
       }
     };
-    kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
+    kapcsolat.csatorna.onclose = () => {
+      console.log("P2P csatorna bezárult.");
+      kapcsolat.state = 'available';
+      try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
+    };
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
     kapcsolat.csatorna.onmessage = async function(event) {
       if (typeof event.data === "string") {
@@ -275,6 +334,12 @@ const Kapcsolatok = {
         if (uzenet.tipus === "fajltartalom") {
           // képtartalom érkezett szövegként
           Fajlkezelo.fajltartalom_feldolgozasa(uzenet.tartalom, kapcsolat.id);
+          return;
+        }
+
+        // mappa tartalom esetén a remote megjelenítőt használjuk
+        if (uzenet.tipus === 'mappatartalom') {
+          Fajlkezelo.mappatartalom_megjelenitese_remote(kapcsolat.id, uzenet.utvonal, uzenet.fajlok);
           return;
         }
 
