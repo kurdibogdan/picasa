@@ -72,11 +72,50 @@ const Fajlkezelo = {
   // Kérést küldünk a távoli peernek, hogy nyissa meg az utat
   mappa_megnyitasa: function(tavoli_id, utvonal) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
+    if (!kapcsolat || !kapcsolat.csatorna) {
+      console.warn("A mappa megnyitásához nincs nyitott kapcsolat.");
+      return;
+    }
     let csatorna = kapcsolat.csatorna;
+    if (csatorna.readyState !== "open") {
+      console.warn("A DataChannel még nem nyitott meg a mappa megnyitásához.");
+      return;
+    }
     csatorna.send(JSON.stringify({
       tipus: "mappa_megnyitasa",
       utvonal: utvonal
     }));
+  },
+
+  // Válasz a távoli peer mappa_megnyitasa kéréseire: lekérjük a mappatartalmat a helyi PHP-ből és elküldjük
+  mappatartalom_elkuldese: function(tavoli_id, utvonal) {
+    let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
+    let csatorna = kapcsolat && kapcsolat.csatorna;
+    if (!csatorna || csatorna.readyState !== 'open') {
+      console.warn("Nem lehet mappatartalmat küldeni: DataChannel zárt vagy nem található.");
+      return;
+    }
+
+    $.get("php/fajlkezelo.php", {
+      "parancs": "mappatartalom",
+      "utvonal": encodeURIComponent(utvonal)
+    }, function(data) {
+      try {
+        let fajlok = JSON.parse(data);
+        csatorna.send(JSON.stringify({
+          tipus: "mappatartalom",
+          utvonal: utvonal,
+          fajlok: fajlok
+        }));
+      }
+      catch (e) {
+        console.error("Hiba a mappatartalom lekérésekor:", e);
+        csatorna.send(JSON.stringify({ tipus: "mappatartalom_hiba", uzenet: e.message }));
+      }
+    }).fail(function(jqxhr, status, err) {
+      console.error("Hiba a mappatartalom lekérésekor:", status, err);
+      csatorna.send(JSON.stringify({ tipus: "mappatartalom_hiba", uzenet: status + " " + err }));
+    });
   },
   
   // Ha a helyi fájlokat szeretnénk lekérdezni és megjeleníteni egy adott panelen
@@ -123,9 +162,7 @@ const Fajlkezelo = {
            + " <div class='datum'>" + item.datum + "</div>"
            + "</div>";
       }
-      // Fájlok kilistázása:
       else {
-        // Direkt letöltés a szerverről
         let downloadUrl = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent((utvonal ? utvonal + '/' : '') + item.nev + (item.tipus ? '.' + item.tipus : ''));
         t += "<div class='keret'>"
            + " <div class='kiskep' style=\"background-image: url('" + item.kiskep + "');\" onclick=\"window.open('" + downloadUrl + "','_blank')\">"
@@ -142,7 +179,6 @@ const Fajlkezelo = {
 
   // Távoli peer fájljainak megjelenítése: használjuk a meglévő DataChannel alapú műveleteket
   mappatartalom_megjelenitese_remote: function(tavoli_id, utvonal, fajlok) {
-    // Eldöntjük, melyik oldalon jelenítsük meg ezt a távoli peer-t: ahol éppen ki van választva
     let side = null;
     if (typeof Kapcsolatok !== 'undefined' && Kapcsolatok.selectedPeer) {
       if (Kapcsolatok.selectedPeer.left === tavoli_id) {
@@ -152,7 +188,6 @@ const Fajlkezelo = {
         side = 'right';
       }
     }
-    // Ha nincs ilyen oldal (például ha a felhasználó közben váltott), akkor jobb oldalra mutatjuk
     if (!side) side = 'right';
 
     let containerId = (side === 'left') ? 'file-list-left' : 'file-list-right';
@@ -201,6 +236,10 @@ const Fajlkezelo = {
   
   fajl_letoltese: function(tavoli_id, fajl, mappa) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
+    if (!kapcsolat || !kapcsolat.csatorna) {
+      console.warn("A fájl letöltéséhez nincs nyitott kapcsolat.");
+      return;
+    }
     let csatorna = kapcsolat.csatorna;
     let utvonal = (mappa ? mappa + "/" : "") + fajl;
     console.log("fajl_letoltese: " + utvonal);
@@ -273,13 +312,10 @@ const Fajlkezelo = {
   },
   
   fajltartalom_feldolgozasa: function(fajltartalom){
-    // Megkeressük, melyik oldalon kell megjeleníteni a képet (ahol a küldő ki van választva)
     let side = null;
     if (typeof Kapcsolatok !== 'undefined' && Kapcsolatok.selectedPeer) {
       if (Kapcsolatok.selectedPeer.left && Kapcsolatok.selectedPeer.left != sajat_id) side = (Kapcsolatok.selectedPeer.left == sajat_id ? 'left' : null);
-      // Ha nincs egyértelmű irány, írjuk a jobb oldalra
     }
-    // Ha nincs külön megadva, default a jobb
     if (!side) side = 'right';
     let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
     document.getElementById(imgContainerId).innerHTML = "<img src='" + fajltartalom + "'>";
