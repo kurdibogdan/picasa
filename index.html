@@ -107,11 +107,8 @@
  </head>
 <body>
 
-<h1>Saját azonosító: <span id="sajat_id">...</span></h1>
-
 <div id="commander">
   <div class="pane" id="pane-left">
-    <h3>Bal panel</h3>
     <div id="peer-list-container-left" class="peer-list">Frissítés...</div>
     <h4>Fájlok:</h4>
     <div id="file-list-left"></div>
@@ -119,7 +116,6 @@
   </div>
 
   <div class="pane" id="pane-right">
-    <h3>Jobb panel</h3>
     <div id="peer-list-container-right" class="peer-list">Frissítés...</div>
     <h4>Fájlok:</h4>
     <div id="file-list-right"></div>
@@ -129,7 +125,6 @@
 
 <script type="text/javascript">
 bejelentkezes(function(){
-  $("#sajat_id").text(sajat_id);
   Kapcsolatok.selectedPeer = {
     left: sajat_id,
     right: sajat_id
