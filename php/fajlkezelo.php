@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == "OPTIONS") {
     exit(); // Az OPTIONS kérésre azonnal üres választ adunk
 }
 
+//header('Content-Type: application/json; charset=utf-8');
 include("kapcsolat.php");
 include("fajllista.php");
 include("fajl_letoltese.php");

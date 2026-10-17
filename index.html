@@ -1,3 +1,24 @@
+<!--
+  TODO:
+  - felhasználónév URL-ből / bejelentkezésből (de mindig új ID-t kap a tiszta kapcsolatokért)
+    > felhasználó nevéhez ikonokat jelenítsen meg programok indítására:
+      -> fájlböngésző
+      -> chat (videó)
+  - A kurdi.eu szerver is jelenjen meg egy felhasználóként, de nála csak fájlböngésző van.
+  - A kurdi.eu szerver kódját különítsük el a kliens kódoktól.
+    > A kliensnek nem kell adatbázis.
+    > A kliens PHP szkriptjei sokkal egyszerűbbek, gyakorlatilag csak a szerverről kér le adatot.
+      Ez később könnyen helyettesíthető más technológiával (pl. HTA alkalmazás).
+      Sajnos IE11 nem támogatja a WebRTC-t.
+  - fényképeket képnéző üzemmódban jelenítse meg
+  - szöveget is jelenítsen meg
+  - explorer / commander nézet váltogatása
+  - nagy ikonok, részletek nézet
+  - fájlmozgatás (másolás, áthelyezés, törlés, letöltés)
+    > mappákat is
+  - közvetlen linkek (felhasználóhoz, fájlhoz, egyéb menühöz)
+  - HIBA: Ha szerverről jelentkezik be valaki, akkor a szerver mappáját listázza ki sajátként.
+-->
 <!DOCTYPE html>
 <html lang="hu">
  <head>
@@ -103,9 +124,23 @@
       font-size: 12px;
     }
 
-</style>
+
+  </style>
  </head>
 <body>
+
+<h1>Saját azonosító: <span id="sajat_id">...</span></h1>
+<div>
+ <h3>Elérhető kapcsolatok:</h3>
+ <div id="peer-list-container" class="peer-list">Frissítés...</div>
+</div>
+<hr>
+<div id="photo-container">
+ <h3>Megosztott fényképek:</h3>
+ <!-- Ide érkeznek majd a képek a P2P csatornán keresztül -->
+ <div id="file-list"></div>
+ <div id="kep_megjelenitese"></div>
+</div>
 
 <div id="commander">
   <div class="pane" id="pane-left">
@@ -123,6 +158,7 @@
 
 <script type="text/javascript">
 bejelentkezes(function(){
+  $("#sajat_id").text(sajat_id);
   Kapcsolatok.selectedPeer = {
     left: sajat_id,
     right: sajat_id
