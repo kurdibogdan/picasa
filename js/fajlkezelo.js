@@ -8,7 +8,8 @@ const Fajlkezelo = {
         this.mappatartalom_elkuldese(tavoli_id, uzenet.utvonal);
         break;
       case "mappatartalom":
-        this.mappatartalom_megjelenitese(tavoli_id, uzenet.utvonal, uzenet.fajlok);
+        // Távoli peer küldte a mappalistát: jelenítsük meg azon a panelen, ahol az adott peer ki van választva
+        this.mappatartalom_megjelenitese_remote(tavoli_id, uzenet.utvonal, uzenet.fajlok);
         break;
       case "fajl_letoltese":
         console.log("Kliens kéri a fájlt: " + uzenet.utvonal);
@@ -68,6 +69,7 @@ const Fajlkezelo = {
     delete this.binaris_fajlok[tavoli_id];
   },
 
+  // Kérést küldünk a távoli peernek, hogy nyissa meg az utat
   mappa_megnyitasa: function(tavoli_id, utvonal) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
     let csatorna = kapcsolat.csatorna;
@@ -77,64 +79,54 @@ const Fajlkezelo = {
     }));
   },
   
-  mappatartalom_elkuldese: function(tavoli_id, utvonal) {
-    let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
-    let csatorna = kapcsolat.csatorna;
-    // Fájllista lekérése a helyi PHP-től és továbbküldése P2P-n
+  // Ha a helyi fájlokat szeretnénk lekérdezni és megjeleníteni egy adott panelen
+  mappatartalom_lekerdez_local: function(utvonal, side) {
     $.get("php/fajlkezelo.php", {
       "parancs": "mappatartalom",
       "utvonal": encodeURIComponent(utvonal)
-    },
-    function(data) {
-      console.log(data);
-      csatorna.send(JSON.stringify({
-        tipus: "mappatartalom",
-        utvonal: (utvonal || ''),
-        fajlok: JSON.parse(data)
-      }));
+    }, function(data) {
+      let fajlok = JSON.parse(data);
+      Fajlkezelo.mappatartalom_megjelenitese_local(side, (utvonal || ''), fajlok);
     });
   },
-  
-  mappatartalom_megjelenitese: function(tavoli_id, utvonal, fajlok) {
+
+  // Helyi megjelenítés (közvetlen letöltés a PHP-ról)
+  mappatartalom_megjelenitese_local: function(side, utvonal, fajlok) {
+    let containerId = (side === 'left') ? 'file-list-left' : 'file-list-right';
+    let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
+
     let t = "<div class='nagykeret'>";
-    
-    // Ha nem a gyökérben vagyunk, mutassunk "vissza" gombot
+
     if (utvonal) {
       let parentPath = utvonal.split('/').filter(Boolean);
       parentPath.pop();
       parentPath = parentPath.join('/');
       t += "<div class='keret'>"
-         + " <div class='kiskep' onclick=\"Fajlkezelo.mappa_megnyitasa(" + tavoli_id + ", '" + parentPath + "')\">"
+         + " <div class='kiskep' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + parentPath + "','" + side + "')\">"
          + "  <span>&#128281;</span>"
          + " </div>"
          + " <div class='nev'>..</div>"
          + " <div class='datum'>&nbsp;</div>"
          + "</div>";
     }
-    
-    // Mappák kilistázása:
+
     for (let i = 0; i < fajlok.length; i++) {
       let item = fajlok[i];
       if (item.tipus == "mappa") {
         let folderPath = (utvonal ? utvonal + '/' : "") + item.nev;
         t += "<div class='keret'>"
-           + " <div class='kiskep' onclick=\"Fajlkezelo.mappa_megnyitasa(" + tavoli_id + ", '" + folderPath + "')\">"
+           + " <div class='kiskep' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + folderPath + "','" + side + "')\">"
            + "  <span>&#128193;</span>"
            + " </div>"
            + " <div class='nev'>" + item.nev + "</div>"
            + " <div class='datum'>" + item.datum + "</div>"
            + "</div>";
       }
-      // Fájlok kilistázása:
       else {
+        // Direkt letöltés a szerverről
+        let downloadUrl = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent((utvonal ? utvonal + '/' : '') + item.nev + (item.tipus ? '.' + item.tipus : ''));
         t += "<div class='keret'>"
-           + " <div class='kiskep' "
-           + "      style=\"background-image: url('" + item.kiskep + "');\""  // "&#128247;
-           + "      onclick=\"Fajlkezelo.fajl_letoltese("
-           +          tavoli_id + ", "
-           + "        '" + item.nev + (item.tipus ? "." + item.tipus : "") + "', "
-           + "        '" + (utvonal || '') + "'"
-           + "      );\">"
+           + " <div class='kiskep' style=\"background-image: url('" + item.kiskep + "');\" onclick=\"window.open('" + downloadUrl + "','_blank')\">"
            + " </div>"
            + " <div class='nev'>" + item.nev + "</div>"
            + " <div class='datum'>" + item.datum + "</div>"
@@ -142,7 +134,63 @@ const Fajlkezelo = {
       }
     }
     t += "</div>";
-    document.getElementById("file-list").innerHTML = t;
+    document.getElementById(containerId).innerHTML = t;
+    document.getElementById(imgContainerId).innerHTML = "";
+  },
+
+  // Távoli peer fájljainak megjelenítése: használjuk a meglévő DataChannel alapú műveleteket
+  mappatartalom_megjelenitese_remote: function(tavoli_id, utvonal, fajlok) {
+    // Eldöntjük, melyik oldalon jelenítsük meg ezt a távoli peer-t: ahol éppen ki van választva
+    let side = null;
+    if (typeof Kapcsolatok !== 'undefined' && Kapcsolatok.selectedPeer) {
+      if (Kapcsolatok.selectedPeer.left == tavoli_id) side = 'left';
+      else if (Kapcsolatok.selectedPeer.right == tavoli_id) side = 'right';
+    }
+    // Ha nincs ilyen oldal (például ha a felhasználó közben váltott), akkor jobb oldalra mutatjuk
+    if (!side) side = 'right';
+
+    let containerId = (side === 'left') ? 'file-list-left' : 'file-list-right';
+    let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
+
+    let t = "<div class='nagykeret'>";
+
+    if (utvonal) {
+      let parentPath = utvonal.split('/').filter(Boolean);
+      parentPath.pop();
+      parentPath = parentPath.join('/');
+      t += "<div class='keret'>"
+         + " <div class='kiskep' onclick=\"Fajlkezelo.mappa_megnyitasa('" + tavoli_id + "', '" + parentPath + "')\">"
+         + "  <span>&#128281;</span>"
+         + " </div>"
+         + " <div class='nev'>..</div>"
+         + " <div class='datum'>&nbsp;</div>"
+         + "</div>";
+    }
+
+    for (let i = 0; i < fajlok.length; i++) {
+      let item = fajlok[i];
+      if (item.tipus == "mappa") {
+        let folderPath = (utvonal ? utvonal + '/' : "") + item.nev;
+        t += "<div class='keret'>"
+           + " <div class='kiskep' onclick=\"Fajlkezelo.mappa_megnyitasa('" + tavoli_id + "', '" + folderPath + "')\">"
+           + "  <span>&#128193;</span>"
+           + " </div>"
+           + " <div class='nev'>" + item.nev + "</div>"
+           + " <div class='datum'>" + item.datum + "</div>"
+           + "</div>";
+      }
+      else {
+        t += "<div class='keret'>"
+           + " <div class='kiskep' style=\"background-image: url('" + item.kiskep + "');\" onclick=\"Fajlkezelo.fajl_letoltese('" + tavoli_id + "', '" + item.nev + (item.tipus ? '.' + item.tipus : '') + "', '" + (utvonal || '') + "')\">"
+           + " </div>"
+           + " <div class='nev'>" + item.nev + "</div>"
+           + " <div class='datum'>" + item.datum + "</div>"
+           + "</div>";
+      }
+    }
+    t += "</div>";
+    document.getElementById(containerId).innerHTML = t;
+    document.getElementById(imgContainerId).innerHTML = "";
   },
   
   fajl_letoltese: function(tavoli_id, fajl, mappa) {
@@ -219,10 +267,18 @@ const Fajlkezelo = {
   },
   
   fajltartalom_feldolgozasa: function(fajltartalom){
-    document.getElementById("kep_megjelenitese").innerHTML = "<img src='" + fajltartalom + "'>";
+    // Megkeressük, melyik oldalon kell megjeleníteni a képet (ahol a küldő ki van választva)
+    let side = null;
+    if (typeof Kapcsolatok !== 'undefined' && Kapcsolatok.selectedPeer) {
+      if (Kapcsolatok.selectedPeer.left && Kapcsolatok.selectedPeer.left != sajat_id) side = (Kapcsolatok.selectedPeer.left == sajat_id ? 'left' : null);
+      // Ha nincs egyértelmű irány, írjuk a jobb oldalra
+    }
+    // Ha nincs külön megadva, default a jobb
+    if (!side) side = 'right';
+    let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
+    document.getElementById(imgContainerId).innerHTML = "<img src='" + fajltartalom + "'>";
   }
   
 };
 
 "use strict";
-
