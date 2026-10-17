@@ -47,6 +47,7 @@ const Kapcsolatok = {
   UZENETEK_FRISSITESI_PERIODUSA: 2000, // ms
   elozo_kapcsolatok: "",
   letrejott_kapcsolatok: [],  // Amikkel már összekapcsolódott.
+  selectedPeer: { left: null, right: null }, // melyik peer van kiválasztva melyik panelen
   
   kapcsolatok_periodikus_frissitese: function() {
     // Kilistázza az elérhető kapcsolatokat (de még nem kapcsolta össze őket).
@@ -58,35 +59,9 @@ const Kapcsolatok = {
         // elérhető kapcsolatok kilistázása (kivéve a saját ID-t):
         Kapcsolatok.elozo_kapcsolatok = data;
         var peers = jQuery.parseJSON(data);
-        const container = document.getElementById('peer-list-container');
-        container.innerHTML = '';
-        peers.forEach(function(peerObj){
-          // Saját ID:
-          if (peerObj.id == sajat_id) {
-            const div = document.createElement("div");
-            div.className = "peer-item";
-            div.innerText = "Saját ID: " + peerObj.id;
-            container.appendChild(div);
-          }
-          else {
-            let kapcsolodva = !! Kapcsolatok.kapcsolat_keresese(peerObj.id);
-            if (kapcsolodva == true) {
-              // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
-              const div = document.createElement("div");
-              div.innerText = "Csatlakozva: " + peerObj.id;
-              div.onclick = function(){Fajlkezelo.mappa_megnyitasa(peerObj.id, "");}
-              container.appendChild(div);
-            }
-            else {
-              // Kapcsolódás kattintásra:
-              const div = document.createElement("div");
-              div.className = "peer-item";
-              div.innerText = "Csatlakozás: " + peerObj.id;
-              div.onclick = function(){Kapcsolatok.kapcsolat_kezdemenyezese(peerObj.id);};
-              container.appendChild(div);
-            }
-          }
-        });
+
+        // Render two peer lists (left and right)
+        Kapcsolatok.renderPeerLists(peers);
         
         // inaktív kapcsolatok törlése:
         for (let i=Kapcsolatok.letrejott_kapcsolatok.length-1; i>=0; i--) {
@@ -105,6 +80,56 @@ const Kapcsolatok = {
       }
       setTimeout(Kapcsolatok.kapcsolatok_periodikus_frissitese, Kapcsolatok.KAPCSOLATOK_FRISSITESI_PERIODUSA);
     });
+  },
+  
+  renderPeerLists: function(peers) {
+    const leftContainer = document.getElementById('peer-list-container-left');
+    const rightContainer = document.getElementById('peer-list-container-right');
+    if (!leftContainer || !rightContainer) return; // még nincs DOM
+    leftContainer.innerHTML = '';
+    rightContainer.innerHTML = '';
+
+    peers.forEach(function(peerObj){
+      function makeButton(side) {
+        const btn = document.createElement('div');
+        btn.className = 'peer-button';
+        let label = (peerObj.id == sajat_id) ? 'Saját ID: ' + peerObj.id : peerObj.id;
+        // ha kapcsolat létezik és a csatorna nyitva, jelöljük
+        let kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
+        if (kapcsolat && kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
+          label += ' (csatlakozva)';
+        }
+        btn.innerText = label;
+        if (Kapcsolatok.selectedPeer[side] == peerObj.id) btn.classList.add('selected');
+        btn.onclick = function() {
+          Kapcsolatok.selectPeer(side, peerObj.id);
+        };
+        return btn;
+      }
+
+      leftContainer.appendChild(makeButton('left'));
+      rightContainer.appendChild(makeButton('right'));
+    });
+  },
+  
+  selectPeer: function(side, id) {
+    Kapcsolatok.selectedPeer[side] = id;
+    // frissítjük a megjelenítést
+    try { Kapcsolatok.renderPeerLists(jQuery.parseJSON(Kapcsolatok.elozo_kapcsolatok)); } catch(e){}
+
+    if (id == sajat_id) {
+      // saját fájlok megjelenítése azon a panelen
+      Fajlkezelo.mappatartalom_lekerdez_local('', side);
+    } else {
+      // ha van már kapcsolat és nyitott a csatorna, kérjük le rögtön a listát
+      let kapcsolat = Kapcsolatok.kapcsolat_keresese(id);
+      if (kapcsolat && kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
+        Fajlkezelo.mappa_megnyitasa(id, '');
+      } else {
+        // ha nincs kapcsolat, kezdeményezzük. onopen fogja kérni a listát.
+        Kapcsolatok.kapcsolat_kezdemenyezese(id);
+      }
+    }
   },
   
   kapcsolat_keresese: function(tavoli_id) {
@@ -204,7 +229,10 @@ const Kapcsolatok = {
     kapcsolat.csatorna.binaryType = "arraybuffer";
     kapcsolat.csatorna.bufferedAmountLowThreshold = 128 * 1024;
     Kapcsolatok.csatorna_beallitasa(kapcsolat, function(){
-      Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
+      // Ha a csatorna megnyílt és ez a peer jelenleg kiválasztott valamelyik panelen, akkor kérdezzük le a gyökérmappát
+      if (Kapcsolatok.selectedPeer.left == kapcsolat.id || Kapcsolatok.selectedPeer.right == kapcsolat.id) {
+        Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
+      }
     });
   },
   
@@ -212,6 +240,15 @@ const Kapcsolatok = {
     kapcsolat.csatorna.onopen = function() {
       console.log("P2P csatorna megnyílt! Állapot:", kapcsolat.csatorna.readyState);
       if (typeof callback == "function") callback();
+
+      // Ha ez a peer ki van választva valamelyik panelen, kérjük le automatikusan a listát
+      try {
+        if (Kapcsolatok.selectedPeer.left == kapcsolat.id || Kapcsolatok.selectedPeer.right == kapcsolat.id) {
+          Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
+        }
+      } catch (e) {
+        console.warn("Hiba a onopen utáni mappalista kérésnél:", e);
+      }
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
@@ -232,6 +269,12 @@ const Kapcsolatok = {
         }
         if (uzenet.tipus === "fajltartalom_vege") {
           Fajlkezelo.fajltartalom_vege_feldolgozasa(kapcsolat.id);
+          return;
+        }
+
+        if (uzenet.tipus === "fajltartalom") {
+          // képtartalom érkezett szövegként
+          Fajlkezelo.fajltartalom_feldolgozasa(uzenet.tartalom, kapcsolat.id);
           return;
         }
 
