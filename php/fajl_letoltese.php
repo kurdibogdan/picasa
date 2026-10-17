@@ -95,4 +95,3 @@ function fajl_letoltese_stream($utvonal) { // AI
 
     return true;
 }
-
