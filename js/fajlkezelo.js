@@ -1,5 +1,6 @@
 const Fajlkezelo = {
-  
+  binaris_fajlok: {},
+
   uzenet_fogadasa: function(tavoli_id, uzenet) {
     console.log("Üzenet érkezett: " + uzenet.tipus);
     switch (uzenet.tipus) {
@@ -13,6 +14,12 @@ const Fajlkezelo = {
         console.log("Kliens kéri a fájlt: " + uzenet.utvonal);
         Fajlkezelo.fajltartalom_elkuldese(tavoli_id, uzenet.utvonal);
         break;
+      case "fajltartalom_meta":
+        this.binaris_fajl_kezdese(tavoli_id, uzenet);
+        break;
+      case "fajltartalom_vege":
+        this.fajltartalom_vege_feldolgozasa(tavoli_id);
+        break;
       case "fajltartalom":
         Fajlkezelo.fajltartalom_feldolgozasa(uzenet.tartalom);
         break;
@@ -21,7 +28,46 @@ const Fajlkezelo = {
         break;
     }
   },
-  
+
+  binaris_fajl_kezdese: function(tavoli_id, meta) {
+    this.binaris_fajlok[tavoli_id] = {
+      chunks: [],
+      filename: meta.nev || "fajl.bin",
+      meret: meta.meret || 0
+    };
+  },
+
+  fajltartalom_binaris_feldolgozasa: function(tavoli_id, chunk) {
+    if (!this.binaris_fajlok[tavoli_id]) {
+      this.binaris_fajlok[tavoli_id] = {
+        chunks: [],
+        filename: "fajl.bin",
+        meret: 0
+      };
+    }
+    this.binaris_fajlok[tavoli_id].chunks.push(chunk);
+  },
+
+  fajltartalom_vege_feldolgozasa: function(tavoli_id) {
+    const allapot = this.binaris_fajlok[tavoli_id];
+    if (!allapot) {
+      return;
+    }
+
+    const blob = new Blob(allapot.chunks, { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = allapot.filename || "fajl.bin";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    delete this.binaris_fajlok[tavoli_id];
+  },
+
   mappa_megnyitasa: function(tavoli_id, utvonal) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
     let csatorna = kapcsolat.csatorna;
@@ -109,21 +155,67 @@ const Fajlkezelo = {
       utvonal: utvonal
     }));
   },
-  
+
   // Egy konkrét kép beolvasása a helyi PHP-től és küldése
-  fajltartalom_elkuldese: function(tavoli_id, utvonal) {
-    $.get("php/fajlkezelo.php", {
-      "parancs": "fajltartalom",
-      "utvonal": encodeURIComponent(utvonal)
-    }, function(tartalom) {
-      console.log(tartalom);
-      let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
-      let csatorna = kapcsolat.csatorna;
+  fajltartalom_elkuldese: async function(tavoli_id, utvonal) {
+    let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
+    let csatorna = kapcsolat && kapcsolat.csatorna;
+    if (!csatorna || csatorna.readyState !== "open") {
+      console.warn("A fájl küldéséhez a DataChannel még nem nyitott meg.");
+      return;
+    }
+
+    const fajl_nev = decodeURIComponent((utvonal.split('/').pop() || "fajl.bin"));
+    const fajl_url = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent(utvonal);
+
+    try {
+      const response = await fetch(fajl_url);
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      if (!response.body) {
+        throw new Error("A böngésző nem támogatja a streamelést.");
+      }
+
       csatorna.send(JSON.stringify({
-        tipus: "fajltartalom",
-        tartalom: tartalom
+        tipus: "fajltartalom_meta",
+        nev: fajl_nev,
+        meret: response.headers.get("Content-Length") || 0
       }));
-    });
+
+      const reader = response.body.getReader();
+      const lowThreshold = csatorna.bufferedAmountLowThreshold || 128 * 1024;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        if (csatorna.bufferedAmount > lowThreshold) {
+          await new Promise((resolve) => {
+            const onLow = () => {
+              csatorna.removeEventListener('bufferedamountlow', onLow);
+              resolve();
+            };
+            csatorna.addEventListener('bufferedamountlow', onLow);
+          });
+        }
+
+        csatorna.send(value);
+      }
+
+      csatorna.send(JSON.stringify({
+        tipus: "fajltartalom_vege"
+      }));
+    }
+    catch (error) {
+      console.error("Fájl küldés hiba:", error);
+      csatorna.send(JSON.stringify({
+        tipus: "fajltartalom_hiba",
+        uzenet: error.message
+      }));
+    }
   },
   
   fajltartalom_feldolgozasa: function(fajltartalom){
@@ -131,3 +223,6 @@ const Fajlkezelo = {
   }
   
 };
+
+"use strict";
+

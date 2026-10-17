@@ -142,7 +142,7 @@ const Kapcsolatok = {
     for (let letrejott_kapcsolat of Kapcsolatok.letrejott_kapcsolatok) {
       if (letrejott_kapcsolat.id == tavoli_id) {
         console.log("Kapcsolat már létezik, újrafelhasználás");
-        return(letrejott_kapcsolat);  // Return existing connection
+        return(letrejott_kapcsolat);
       }
     }
     
@@ -161,15 +161,9 @@ const Kapcsolatok = {
     const RTC_BEALLITASOK = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-     // { urls: "stun:stun1.l.google.com:19302" },
-     // {
-     //   urls: ["turn:turnserver.online"],
-     //   username: "",
-     //   credential: ""
-     // }
       ]
     };
-    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK); //  var PC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK);
     
     kapcsolat.pc.oniceconnectionstatechange = () => {
       console.log("🔵 ICE kapcsolat állapota:", kapcsolat.pc.iceConnectionState);
@@ -207,6 +201,8 @@ const Kapcsolatok = {
   
   csatorna_keszitese: function(kapcsolat) {
     kapcsolat.csatorna = kapcsolat.pc.createDataChannel("photos");
+    kapcsolat.csatorna.binaryType = "arraybuffer";
+    kapcsolat.csatorna.bufferedAmountLowThreshold = 128 * 1024;
     Kapcsolatok.csatorna_beallitasa(kapcsolat, function(){
       Fajlkezelo.mappa_megnyitasa(kapcsolat.id, "");
     });
@@ -219,9 +215,33 @@ const Kapcsolatok = {
     };
     kapcsolat.csatorna.onclose = () => console.log("P2P csatorna bezárult.");
     kapcsolat.csatorna.onerror = (err) => console.error("DataChannel hiba:", err);
-    kapcsolat.csatorna.onmessage = function(event) {
-        var uzenet = JSON.parse(event.data);
+    kapcsolat.csatorna.onmessage = async function(event) {
+      if (typeof event.data === "string") {
+        let uzenet = null;
+        try {
+          uzenet = JSON.parse(event.data);
+        }
+        catch (e) {
+          console.warn("Nem JSON üzenet a DataChannelen:", event.data);
+          return;
+        }
+
+        if (uzenet.tipus === "fajltartalom_meta") {
+          Fajlkezelo.binaris_fajl_kezdese(kapcsolat.id, uzenet);
+          return;
+        }
+        if (uzenet.tipus === "fajltartalom_vege") {
+          Fajlkezelo.fajltartalom_vege_feldolgozasa(kapcsolat.id);
+          return;
+        }
+
         Fajlkezelo.uzenet_fogadasa(kapcsolat.id, uzenet);
+        return;
+      }
+
+      const buffer = event.data instanceof Blob ? await event.data.arrayBuffer() : event.data;
+      const chunk = new Uint8Array(buffer);
+      Fajlkezelo.fajltartalom_binaris_feldolgozasa(kapcsolat.id, chunk);
     };
   },
   

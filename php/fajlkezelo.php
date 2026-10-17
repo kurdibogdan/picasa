@@ -14,7 +14,6 @@ if ($_SERVER['REQUEST_METHOD'] == "OPTIONS") {
     exit(); // Az OPTIONS kérésre azonnal üres választ adunk
 }
 
-//header('Content-Type: application/json; charset=utf-8');
 include("kapcsolat.php");
 include("fajllista.php");
 include("fajl_letoltese.php");
@@ -26,9 +25,12 @@ switch($parancs){
     case "mappatartalom": // Lista kérése JSON formában
         echo fajllista($utvonal);
         break;
-    case "fajltartalom": // Egy konkrét kép beolvasása Base64-be a küldéshez
-        echo fajl_letoltese($utvonal);
-        break;
+    case "fajltartalom":
+        if (!fajl_letoltese_stream($utvonal)) {
+            http_response_code(404);
+            echo "File not found or invalid path";
+        }
+        exit;
     default:
         break;
 }
