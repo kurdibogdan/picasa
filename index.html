@@ -1,25 +1,3 @@
-<!--
-  TODO:
-  - fájlok darabolása (PHP-vel kliensnek, JavaScripttel peernek)
-  - szöveget is jelenítsen meg
-  - fájlmozgatás (másolás, áthelyezés, törlés, letöltés)
-    > mappákat is
-  - felhasználónév URL-ből / bejelentkezésből (de mindig új ID-t kap a tiszta kapcsolatokért)
-    > felhasználó nevéhez ikonokat jelenítsen meg programok indítására:
-      -> fájlböngésző
-      -> chat (videó)
-  - A kurdi.eu szerver is jelenjen meg egy felhasználóként, de nála csak fájlböngésző van.
-  - A kurdi.eu szerver kódját különítsük el a kliens kódoktól.
-    > A kliensnek nem kell adatbázis.
-    > A kliens PHP szkriptjei sokkal egyszerűbbek, gyakorlatilag csak a szerverről kér le adatot.
-      Ez később könnyen helyettesíthető más technológiával (pl. HTA alkalmazás).
-      Sajnos IE11 nem támogatja a WebRTC-t.
-  - fényképeket képnéző üzemmódban jelenítse meg
-  - explorer / commander nézet váltogatása
-  - nagy ikonok, részletek nézet
-  - közvetlen linkek (felhasználóhoz, fájlhoz, egyéb menühöz)
-  - HIBA: Ha szerverről jelentkezik be valaki, akkor a szerver mappáját listázza ki sajátként.
--->
 <!DOCTYPE html>
 <html lang="hu">
  <head>
@@ -31,26 +9,100 @@
   <script type="text/javascript" src="js/fajlkezelo.js"></script>
   <link rel="stylesheet" type="text/css" href="stiluslap.css">
   <style type="text/css">
+    #commander {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .pane {
+      flex: 1 1 50%;
+      border: 1px solid #d0d0d0;
+      padding: 12px;
+      box-sizing: border-box;
+      min-height: 360px;
+      background: #fafafa;
+    }
+    .peer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .peer-button {
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #c8c8c8;
+      background: #fff;
+      cursor: pointer;
+    }
+    .peer-button.selected {
+      background: #edf4ff;
+      border-color: #7aa6ff;
+      font-weight: bold;
+    }
+    .nagykeret {
+      display: block;
+    }
+    .keret {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .kiskep {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+    }
+    .nev {
+      flex: 1;
+      min-width: 0;
+    }
+    .datum {
+      color: #666;
+      font-size: 12px;
+    }
   </style>
  </head>
 <body>
 
 <h1>Saját azonosító: <span id="sajat_id">...</span></h1>
-<div>
- <h3>Elérhető kapcsolatok:</h3>
- <div id="peer-list-container" class="peer-list">Frissítés...</div>
-</div>
-<hr>
-<div id="photo-container">
- <h3>Megosztott fényképek:</h3>
- <!-- Ide érkeznek majd a képek a P2P csatornán keresztül -->
- <div id="file-list"></div>
- <div id="kep_megjelenitese"></div>
+
+<div id="commander">
+  <div class="pane" id="pane-left">
+    <h3>Bal panel</h3>
+    <div id="peer-list-container-left" class="peer-list">Frissítés...</div>
+    <h4>Fájlok:</h4>
+    <div id="file-list-left"></div>
+    <div id="kep_megjelenitese-left"></div>
+  </div>
+
+  <div class="pane" id="pane-right">
+    <h3>Jobb panel</h3>
+    <div id="peer-list-container-right" class="peer-list">Frissítés...</div>
+    <h4>Fájlok:</h4>
+    <div id="file-list-right"></div>
+    <div id="kep_megjelenitese-right"></div>
+  </div>
 </div>
 
 <script type="text/javascript">
 bejelentkezes(function(){
   $("#sajat_id").text(sajat_id);
+  Kapcsolatok.selectedPeer = {
+    left: sajat_id,
+    right: sajat_id
+  };
+  Fajlkezelo.mappatartalom_lekerdez_local("", "left");
+  Fajlkezelo.mappatartalom_lekerdez_local("", "right");
   Kapcsolatok.kapcsolatok_periodikus_frissitese();
   Kapcsolatok.uzenetek_periodikus_olvasasa();
 });
