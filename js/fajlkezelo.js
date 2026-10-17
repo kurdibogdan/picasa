@@ -87,7 +87,7 @@ const Fajlkezelo = {
     }));
   },
 
-  // Válasz a távoli peer mappa_megnyitasa kéréseire: lekérjük a mappatartalmat a helyi PHP-ből és elküldjük
+  // Válasz a távoli peer mappa_megnyitasa kéréseire: lekérjük a mappatartalmat a helyi PHP-ből és elküldjuk
   mappatartalom_elkuldese: function(tavoli_id, utvonal) {
     let kapcsolat = Kapcsolatok.kapcsolat_keresese(tavoli_id);
     let csatorna = kapcsolat && kapcsolat.csatorna;
@@ -319,8 +319,12 @@ const Fajlkezelo = {
     if (!side) side = 'right';
     let imgContainerId = (side === 'left') ? 'kep_megjelenitese-left' : 'kep_megjelenitese-right';
     document.getElementById(imgContainerId).innerHTML = "<img src='" + fajltartalom + "'>";
+
+    // legacy single-pane support
+    try {
+      var legacy = document.getElementById('kep_megjelenitese');
+      if (legacy) legacy.innerHTML = "<img src='" + fajltartalom + "'>";
+    } catch(e) {}
   }
   
 };
-
-"use strict";
