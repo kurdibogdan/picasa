@@ -141,13 +141,13 @@ const Fajlkezelo = {
       let parentPath = utvonal.split('/').filter(Boolean);
       parentPath.pop();
       parentPath = parentPath.join('/');
-      t += "<div class='keret'>"
-         + " <div class='kiskep' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + parentPath + "','" + side + "')\">"
-         + "  <span>&#128281;</span>"
-         + " </div>"
-         + " <div class='nev'>..</div>"
-         + " <div class='datum'>&nbsp;</div>"
-         + "</div>";
+      t += "<table class='tablasor'>"
+         + " <tr>"
+         + "  <td class='kiskep mappaikon' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + parentPath + "','" + side + "')\"></td>"  // + "  <span>&#128281;</span>"
+         + "  <td class='nev'>..</td>"
+         + "  <td class='datum'>&nbsp;</td>"
+         + " </tr>"
+         + " </table>";
     }
     
     // Mappák kilistázása:
@@ -155,25 +155,27 @@ const Fajlkezelo = {
       let item = fajlok[i];
       if (item.tipus == "mappa") {
         let folderPath = (utvonal ? utvonal + '/' : "") + item.nev;
-        t += "<div class='keret'>"
-           + " <div class='kiskep' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + folderPath + "','" + side + "')\">"
-           + "  <span>&#128193;</span>"
-           + " </div>"
-           + " <div class='nev'>" + item.nev + "</div>"
-           + " <div class='datum'>" + item.datum + "</div>"
-           + "</div>";
+        t += "<table class='tablasor'>"
+           + " <tr>"
+           + "  <td class='kiskep mappaikon' onclick=\"Fajlkezelo.mappatartalom_lekerdez_local('" + folderPath + "','" + side + "')\"></td>" // + "  <span>&#128193;</span>"
+           + "  <td class='nev'>" + item.nev + "</td>"
+           + "  <td class='datum'>" + item.datum + "</td>"
+           + " </tr>"
+           + "</table>";
       }
       // Fájlok kilistázása:
       else {
         let downloadUrl = "php/fajlkezelo.php?parancs=fajltartalom&utvonal=" + encodeURIComponent((utvonal ? utvonal + '/' : '') + item.nev + (item.tipus ? '.' + item.tipus : ''));
-        t += "<div class='keret'>"
-           + " <div class='kiskep' "
+        t += "<table class='tablasor'>"
+           + " <tr>"
+           + "  <td class='kiskep' "
            + "      style=\"background-image: url('" + item.kiskep + "');\""  // "&#128247;
            + "      onclick=\"window.open('" + downloadUrl + "','_blank')\">"
-           + " </div>"
-           + " <div class='nev'>" + item.nev + "</div>"
-           + " <div class='datum'>" + item.datum + "</div>"
-           + "</div>";
+           + "  </td>"
+           + "  <td class='nev'>" + item.nev + "." + item.tipus + "</td>"
+           + "  <td class='datum'>" + item.datum + "</td>"
+           + " </tr>"
+           + "</table>";
       }
     }
     t += "</div>";

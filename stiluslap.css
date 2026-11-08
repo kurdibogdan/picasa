@@ -1,13 +1,11 @@
-.peer-list { border: 1px solid #ccc; padding: 10px; width: 200px; cursor: pointer; }
-.peer-item:hover { background: #eee; }
 .keret {
-  display: inline-block;
+  display: block;
   margin: 10px;
-  box-shadow: 2px 5px 10px 0px rgba(0,0,0,0.2);
+  border: 1px solid #eee;
 }
+
 .kiskep {
-  width: 100px;
-  height: 100px;
+  width: 40px; height: 40px; /* width: 100px; height: 100px; */
   text-align: center;
   background-repeat: no-repeat;
   background-position: center center;
@@ -18,17 +16,53 @@
   line-height: 1em;
 }
 .nev {
-  width: 100px;
   /* word-wrap: break-word; */ /* ha több sorban szeretnénk */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: center;
   font-family: 'Garamond';
 }
-.datum {
-  font-size: 12px;
-  text-align: center;
-}
+
 #kep_megjelenitese {width: 300px; height: 200px; border: 1px solid black; text-align: center;}
 #kep_megjelenitese img {max-width: 100%; max-height: 100%;}
+
+
+/**********************************/
+/* Kommander fejléce */
+.peer-button {
+  display: inline-block;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-right: 5px;
+}
+.peer-button:hover {
+  cursor: pointer;
+}
+.peer-statusz {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.peer-statusz-sajat { background-color: #000; }
+.peer-statusz-elerheto { background-color: #fff; }
+.peer-statusz-kapcsolodas { background-color: #2b8cff; }
+.peer-statusz-kapcsolodva { background-color: #29c93b; }
+
+/* Kommander táblázata */
+.tablasor{width: 100%; border-top: 1px solid #ccc;}
+.tablasor td:nth-child(1){width: 40px;}    /* ikon */
+.tablasor td:nth-child(2){max-width: 1px;} /* név */
+.tablasor td:nth-child(3){                 /* dátum */
+  width: 100px;
+  text-align: right;
+  font-size: 12px;
+  color: #777;
+}
+.nagykeret{border: 1px solid #ccc; padding:5px;}
+.nagykeret .tablasor:nth-child(1){border-top:0px !important;}
+.mappaikon {
+  background-image: url("kepek/mappaikon.png");
+}

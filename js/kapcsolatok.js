@@ -2,6 +2,7 @@ var sajat_id = -1;
 
 function bejelentkezes(callback) {
   $.get("php/bejelentkezes.php", function(data){
+    console.log(data);
     sajat_id = data;
     if (typeof callback == "function"){
       callback();
@@ -95,20 +96,20 @@ const Kapcsolatok = {
         btn.className = 'peer-button';
         // státusz kör
         const status = document.createElement('span');
-        status.className = 'status-circle';
+        status.className = 'peer-statusz';
 
         // determine state
-        let state = 'available';
+        let state = 'elerheto';
         if (peerObj.id == sajat_id) {
           // Saját ID:
-          state = 'own';
+          state = 'sajat';
         } else {
           const kapcsolat = Kapcsolatok.kapcsolat_keresese(peerObj.id);
           if (!kapcsolat) {
-            state = 'available';
+            state = 'elerheto';
           } else if (kapcsolat.csatorna && kapcsolat.csatorna.readyState === 'open') {
             // Ha már összekapcsolódott, akkor csak megjelenítjük a listában, de nem kattintható:
-            state = 'connected';
+            state = 'kapcsolodva';
           } else if (
               kapcsolat.state === 'connecting' ||
               (kapcsolat.pc && (
@@ -117,17 +118,16 @@ const Kapcsolatok = {
                 kapcsolat.pc.iceConnectionState === 'new'
               ))
           ) {
-            state = 'connecting';
+            state = 'kapcsolodas';
           } else {
-            state = 'available';
+            state = 'elerheto';
           }
         }
 
-        status.classList.add('status-' + state);
+        status.classList.add('peer-statusz-' + state);
 
         // only show ID text
         const idSpan = document.createElement('span');
-        idSpan.className = 'peer-id';
         idSpan.innerText = peerObj.id;
 
         btn.appendChild(status);
@@ -241,13 +241,8 @@ const Kapcsolatok = {
   },
   
   peer_beallitasa: function(kapcsolat){
-    const RTC_BEALLITASOK = {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-      ]
-    };
-    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK);
-    
+    const RTC_BEALLITASOK = {iceServers: [{ urls: "stun:stun.l.google.com:19302" }]};
+    kapcsolat.pc = new RTCPeerConnection(RTC_BEALLITASOK); //  var PC = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
     kapcsolat.pc.oniceconnectionstatechange = () => {
       console.log("🔵 ICE kapcsolat állapota:", kapcsolat.pc.iceConnectionState);
       // update state/UI
@@ -393,12 +388,14 @@ const Kapcsolatok = {
   
   uzenetek_periodikus_olvasasa: function() {
     $.get("php/uzenetek_fogadasa.php", {sajat_id: sajat_id}, function(data){
-      if (data.length > 0 && data != "[]") console.log(data);
-      var uzenetek = jQuery.parseJSON(data);
-      uzenetek.forEach(function(uzenet){
-        console.log("Új üzenet érkezett innen:", uzenet.kuldo_id);
-        handleIncomingSignaling(uzenet.kuldo_id, jQuery.parseJSON(uzenet.torzs));  // webrtc.js
-      });
+      if (data.length > 0 && data != "[]") {
+        console.log(data);
+        var uzenetek = jQuery.parseJSON(data);
+        uzenetek.forEach(function(uzenet){
+          console.log("Új üzenet érkezett innen:", uzenet.kuldo_id);
+          handleIncomingSignaling(uzenet.kuldo_id, jQuery.parseJSON(uzenet.torzs));  // webrtc.js
+        });
+      }
       setTimeout(function(){
           Kapcsolatok.uzenetek_periodikus_olvasasa(sajat_id);
         }, 
